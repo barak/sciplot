@@ -771,7 +771,7 @@ static int
 _ListNew (SciPlotWidget w)
 {
   int index;
-  SciPlotList *p;
+  SciPlotList *p = NULL;
   Boolean found;
 
 /* First check to see if there is any free space in the index */
@@ -3214,6 +3214,8 @@ DrawCartesianPlot (SciPlotWidget w)
       real x1, y1, x2, y2;
       Boolean skipnext=False;
     
+      x1 = 0;
+      y1 = 0;
       jstart = 0;
       while ((jstart < p->number) &&
         (((p->data[jstart].x <= SCIPLOT_SKIP_VAL ||

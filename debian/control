@@ -1,0 +1,36 @@
+Source: sciplot
+Section: math
+Priority: optional
+Maintainer: Brian Russo <wolfie@debian.org> 
+Build-Depends: debhelper, lesstif-dev, xutils
+Standards-Version: 3.1.1
+
+Package: sciplot1
+Architecture: any
+Depends: ${shlibs:Depends}
+Replaces: sciplot
+Conflicts: sciplot
+Description: widget for scientific plotting
+ The SciPlot Widget is a widget capable of plotting cartesian or polar
+ graphs, including logarithmic axes in cartesian plots.  The widget is
+ subclassed directly from the Core widget class, which means that it does
+ not depend upon any other widget set.  It may be freely used with Athena,
+ Motif, or the Open Look/Xview widget sets.  (There is optional Motif
+ support that causes the widget to be subclassed from XmPrimitive.  See
+ the man page.)
+ .
+ Features provided in the widget include automatic scaling, legend drawing,
+ axis labeling, PostScript output, multiple plotted lines, color support,
+ user font specification, dashed lines, symbols drawn at points, logarithmic
+ scales on one or both axes in cartesian plots, and degrees or radians as
+ angles in polar plots.
+
+Package: sciplot-dev
+Section: devel
+Architecture: any
+Depends: sciplot1 (= ${Source-Version})
+Conflicts: sciplot
+Description: Development library and header files for SciPlot
+ Contains C header files and development shared libraries libraries for
+ SciPlot.  The SciPlot Widget is a widget capable of plotting cartesian
+ or polar graphs, including logarithmic axes in cartesian plots.

@@ -1,0 +1,87 @@
+sciplot (1.36-8) unstable; urgency=low
+
+  * New Maintainer (Closes: #84745)
+
+ -- Brian Russo <wolfie@debian.org>  Mon, 12 Feb 2001 00:19:38 -1000
+
+sciplot (1.36-7) unstable; urgency=low
+
+  * Corrected the section of sciplot-dev from math to devel in
+    debian/control.
+
+ -- Adrian Bunk <bunk@fs.tum.de>  Sun,  4 Feb 2001 01:54:40 +0100
+
+sciplot (1.36-6) unstable; urgency=low
+
+  * New maintainer. (closes: #68200)
+
+ -- Adrian Bunk <bunk@fs.tum.de>  Fri,  2 Feb 2001 13:57:14 +0100
+
+sciplot (1.36-5) unstable; urgency=low
+
+  * Added Conflicts: sciplot to binary packages sciplot1 and sciplot-dev.
+
+ -- Peter Palfrader <weasel@debian.org>  Thu, 28 Dec 2000 01:15:52 +0100
+
+sciplot (1.36-4.1) unstable; urgency=low
+
+  * Rebuilt package to remove wrong dependency on xlib6.
+
+ -- Martin Michlmayr <tbm@cyrius.com>  Thu, 21 Dec 2000 21:40:45 +0100
+
+sciplot (1.36-4) unstable; urgency=low
+
+  * Maintainer set to Debian QA Group.
+  * The QA Group acknowledges the previous two NMUs (Closes: #48174,
+    #49490).  Thanks!
+  * Added Build-Depends line.
+  * Use gcc instead of egcc (Closes: #62908).
+  * Updated Standards-Version.
+  * Removed README.debian since it didn't contain any valuable
+    information.
+  * Updated README.examples.
+  * Improved debian/copyright.
+  * Removed the emacs config directives from debian/changelog.
+  * Made the package a proper library (i.e. created a -dev package).
+  * Compiled the new package on the Alpha architecture, and it seems
+    to build without any problems (Closes: #55273).
+  * Fixed some GCC warnings.
+
+ -- Martin Michlmayr <tbm@cyrius.com>  Wed, 20 Dec 2000 01:12:01 +0100
+
+sciplot (1.36-3.2) unstable; urgency=low
+
+  * NMU
+  * Fixes compile problesm; closes: #49490
+  * Now uses debhelper
+  * Lintian error free
+
+ -- Randolph Chung <tausq@debian.org>  Sat, 15 Jan 2000 10:20:15 -0700
+
+sciplot (1.36-3.1) unstable; urgency=low
+
+  * NMU for bugs
+  * Closes: #48174
+  * needed to be recompiled against new lesstif
+  * implemented switch to /usr/share/doc
+
+ -- Sean E. Perry <shaleh@debian.org>  Thu, 28 Oct 1999 22:10:43 -0700
+
+sciplot (1.36-3) unstable; urgency=low
+
+  * Use -fPIC for shared library
+
+ -- John Lapeyre <lapeyre@physics.arizona.edu>  Mon,  3 Aug 1998 17:12:09 -0700
+	
+sciplot (1.36-2) unstable; urgency=low
+
+  * Initial Release.
+
+ -- John Lapeyre <lapeyre@physics.arizona.edu>  Fri, 31 Jul 1998 11:47:31 -0700
+	
+sciplot (1.36-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- John Lapeyre <lapeyre@physics.arizona.edu>  Fri, 10 Jul 1998 16:05:22 -0700
+

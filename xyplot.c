@@ -25,8 +25,8 @@
 #include <X11/StringDefs.h>
 #include <Xm/PushB.h>
 #include <Xm/MainW.h>
-#include "SciPlot.h"
-#include "SciPlotUtil.h"
+#include <SciPlot.h>
+#include <SciPlotUtil.h>
 
 void
 ArgProcess(Widget parent,int argc, char *argv[])

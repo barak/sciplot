@@ -1,0 +1,14 @@
+To compile these examples, try
+
+cd ~
+gcc -o ~/xyplot -I/usr/X11R6/include /usr/share/doc/sciplot-dev/examples/xyplot.c -lsciplot
+gcc -o ~/realtime /usr/share/doc/sciplot-dev/examples/realtime.c -lsciplot
+
+To run them, type
+
+xyplot /usr/share/doc/sciplot-dev/examples/data.txt
+realtime
+
+This differs somewhat from the instructions in the original package.
+The Debian distribution includes the library, libsciplot.so.
+
