@@ -1,6 +1,6 @@
 sciplot (1.36-9) unstable; urgency=low
 
-  * New Maintainer (revive package from morgue)
+  * New Maintainer adopts cold body from morgue (closes: #174123)
   * Capitalize "Cartesian" in descriptions (closes: #125339, #125340)
   * Section lib/libdevel
 
