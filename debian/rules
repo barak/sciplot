@@ -39,7 +39,6 @@ build-stamp:
 
 clean:
 	dh_testdir
-	dh_testroot
 	-make clean
 	-rm -f build
 	-rm -f *.so.*
@@ -51,7 +50,6 @@ clean:
 install: install-stamp
 install-stamp: build-stamp
 	dh_testdir
-	dh_testroot
 	dh_clean -k
 	dh_installdirs
 
@@ -98,4 +96,3 @@ checkroot:
 	test root = "`whoami`"
 
 .PHONY: binary binary-arch binary-indep clean checkroot
-
