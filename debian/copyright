@@ -1,5 +1,4 @@
-This package was debianized by John Lapeyre <lapeyre@physics.arizona.edu>.
-Current maintainer is Adrian Bunk <bunk@fs.tum.de>.
+First debianizer John Lapeyre <lapeyre@physics.arizona.edu>.
 
 It was downloaded from ftp://ftp.x.org/contrib/widgets/
 
@@ -10,4 +9,3 @@ Copyright:
 You are free to distribute this software under the terms of the
 GNU Library General Public License.  The full text of this license
 can be found in the file /usr/share/common-licenses/LGPL-2
-
