@@ -1,3 +1,9 @@
+sciplot (1.36-10) unstable; urgency=low
+
+  * additional build dependency (closes: #249555)
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Tue, 18 May 2004 00:44:11 -0600
+
 sciplot (1.36-9) unstable; urgency=low
 
   * New Maintainer adopts cold body from morgue (closes: #174123)

@@ -1,8 +1,8 @@
 Source: sciplot
 Priority: optional
 Maintainer: Barak Pearlmutter <bap@debian.org>
-Build-Depends: debhelper, lesstif-dev, xutils
-Standards-Version: 3.6.0
+Build-Depends: debhelper, lesstif-dev, xutils, libxmu-dev
+Standards-Version: 3.6.1
 
 Package: sciplot1
 Section: libs
