@@ -1,3 +1,10 @@
+sciplot (1.36-9) unstable; urgency=low
+
+  * New Maintainer (revive package from morgue)
+  * Capitalize "Cartesian" in descriptions (closes: #125339, #125340)
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Thu, 28 Aug 2003 22:00:06 -0600
+
 sciplot (1.36-8) unstable; urgency=low
 
   * New Maintainer (Closes: #84745)

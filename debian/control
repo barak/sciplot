@@ -1,7 +1,7 @@
 Source: sciplot
 Section: math
 Priority: optional
-Maintainer: Brian Russo <wolfie@debian.org> 
+Maintainer: Barak Pearlmutter <bap@debian.org>
 Build-Depends: debhelper, lesstif-dev, xutils
 Standards-Version: 3.1.1
 
