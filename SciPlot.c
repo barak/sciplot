@@ -26,6 +26,7 @@
 #include <X11/StringDefs.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "SciPlotP.h"
 
@@ -357,7 +358,7 @@ SetValues(SciPlotWidget current, SciPlotWidget request, SciPlotWidget new,
     redisplay = TRUE;
   else if (current->plot.Monochrome != new->plot.Monochrome)
     redisplay = TRUE;
-  
+
   if (new->plot.TransientXLabel) {
     if (current->plot.TransientXLabel != new->plot.TransientXLabel ||
         strcmp(new->plot.TransientXLabel,current->plot.xlabel)!=0) {
@@ -388,7 +389,7 @@ SetValues(SciPlotWidget current, SciPlotWidget request, SciPlotWidget new,
       new->plot.TransientPlotTitle=NULL;
     }
   }
-  
+
   if (current->plot.AxisFont != new->plot.AxisFont) {
     redisplay = TRUE;
     FontnumReplace(new, new->plot.axisFont, new->plot.AxisFont);
@@ -421,7 +422,7 @@ GetValuesHook(SciPlotWidget w, ArgList args, Cardinal *num_args)
       *loc=w->plot.xlabel;
     else if (strcmp(args[i].name,XtNyLabel)==0)
       *loc=w->plot.ylabel;
-      
+
   }
 }
 
@@ -431,7 +432,7 @@ Redisplay(SciPlotWidget w)
 {
   if (!XtIsRealized((Widget)w))
     return;
-  
+
   if (w->plot.update) {
     Resize(w);
     w->plot.update = FALSE;
@@ -446,7 +447,7 @@ Resize(SciPlotWidget w)
 {
   if (!XtIsRealized((Widget)w))
     return;
-  
+
   EraseAll(w);
   ComputeAll(w);
   DrawAll(w);
@@ -458,7 +459,7 @@ Resize(SciPlotWidget w)
  */
 
 
-static int 
+static int
 ColorStore (SciPlotWidget w, Pixel color)
 {
   w->plot.num_colors++;
@@ -468,7 +469,7 @@ ColorStore (SciPlotWidget w, Pixel color)
   return w->plot.num_colors - 1;
 }
 
-static void 
+static void
 FontnumStore (SciPlotWidget w, int fontnum, int flag)
 {
   SciPlotFont *pf;
@@ -509,7 +510,7 @@ FontnumStore (SciPlotWidget w, int fontnum, int flag)
   FontInit(w, pf);
 }
 
-static int 
+static int
 FontnumReplace (SciPlotWidget w, int fontnum, int flag)
 {
   SciPlotFont *pf;
@@ -522,7 +523,7 @@ FontnumReplace (SciPlotWidget w, int fontnum, int flag)
   return fontnum;
 }
 
-static int 
+static int
 FontStore (SciPlotWidget w, int flag)
 {
   int fontnum;
@@ -556,7 +557,7 @@ FontDescLookup (int flag)
 }
 
 
-static void 
+static void
 FontnumPostScriptString (SciPlotWidget w, int fontnum, char *str)
 {
   char temp[128];
@@ -594,7 +595,7 @@ FontnumPostScriptString (SciPlotWidget w, int fontnum, char *str)
     sprintf(str, "/Courier findfond 10 scalefont");
 }
 
-static void 
+static void
 FontX11String (int flag, char *str)
 {
   SciPlotFontDesc *pfd;
@@ -614,7 +615,7 @@ FontX11String (int flag, char *str)
 #endif
 }
 
-static void 
+static void
 FontInit (SciPlotWidget w, SciPlotFont *pf)
 {
   char str[256], **list;
@@ -767,7 +768,7 @@ FontnumTextWidth(SciPlotWidget w, int fontnum, char *c)
  * Private List functions
  */
 
-static int 
+static int
 _ListNew (SciPlotWidget w)
 {
   int index;
@@ -818,7 +819,7 @@ _ListNew (SciPlotWidget w)
   return index;
 }
 
-static void 
+static void
 _ListDelete (SciPlotList *p)
 {
   p->draw = p->used = FALSE;
@@ -844,7 +845,7 @@ _ListFind (SciPlotWidget w, int id)
   return NULL;
 }
 
-static void 
+static void
 _ListSetStyle (SciPlotList *p, int pcolor, int pstyle, int lcolor, int lstyle)
 {
 /* Note!  Do checks in here later on... */
@@ -859,7 +860,7 @@ _ListSetStyle (SciPlotList *p, int pcolor, int pstyle, int lcolor, int lstyle)
     p->PointColor = pcolor;
 }
 
-static void 
+static void
 _ListSetLegend (SciPlotList *p, char *legend)
 {
 /* Note!  Do checks in here later on... */
@@ -868,7 +869,7 @@ _ListSetLegend (SciPlotList *p, char *legend)
   strcpy(p->legend, legend);
 }
 
-static void 
+static void
 _ListAllocData (SciPlotList *p, int num)
 {
   if (p->data) {
@@ -882,7 +883,7 @@ _ListAllocData (SciPlotList *p, int num)
   }
 }
 
-static void 
+static void
 _ListReallocData (SciPlotList *p, int more)
 {
   if (!p->data) {
@@ -898,7 +899,7 @@ _ListReallocData (SciPlotList *p, int more)
 
 }
 
-static void 
+static void
 _ListAddReal (SciPlotList *p, int num, real *xlist, real *ylist)
 {
   int i;
@@ -913,7 +914,7 @@ _ListAddReal (SciPlotList *p, int num, real *xlist, real *ylist)
   }
 }
 
-static void 
+static void
 _ListAddFloat (SciPlotList *p, int num, float *xlist, float *ylist)
 {
   int i;
@@ -928,7 +929,7 @@ _ListAddFloat (SciPlotList *p, int num, float *xlist, float *ylist)
   }
 }
 
-static void 
+static void
 _ListAddDouble (SciPlotList *p, int num, double *xlist, double *ylist)
 {
   int i;
@@ -952,7 +953,7 @@ _ListSetReal(SciPlotList *p, int num, real *xlist, real *ylist)
   _ListAddReal(p, num, xlist, ylist);
 }
 
-static void 
+static void
 _ListSetFloat (SciPlotList *p, int num, float *xlist, float *ylist)
 {
   if ((!p->data) || (p->allocated < num))
@@ -961,7 +962,7 @@ _ListSetFloat (SciPlotList *p, int num, float *xlist, float *ylist)
   _ListAddFloat(p, num, xlist, ylist);
 }
 
-static void 
+static void
 _ListSetDouble (SciPlotList *p, int num, double *xlist, double *ylist)
 {
   if ((!p->data) || (p->allocated < num))
@@ -976,18 +977,18 @@ _ListSetDouble (SciPlotList *p, int num, double *xlist, double *ylist)
  */
 
 
-/* 
+/*
  * The following vertical text drawing routine uses the "Fill Stippled" idea
  * found in xvertext-5.0, by Alan Richardson (mppa3@syma.sussex.ac.uk).
- * 
+ *
  * The following code is my interpretation of his idea, including some
  * hacked together excerpts from his source.  The credit for the clever bits
  * belongs to him.
- * 
+ *
  * To be complete, portions of the subroutine XDrawVString are
  * Copyright (c) 1993 Alan Richardson (mppa3@syma.sussex.ac.uk)
  */
-static void 
+static void
 XDrawVString (Display *display, Window win, GC gc, int x, int y, char *str, int len, XFontStruct *f)
 {
   XImage *before, *after;
@@ -1099,7 +1100,7 @@ static char dots[] =
 static char widedots[] =
 {2, 1, 4};
 
-static GC 
+static GC
 ItemGetGC (SciPlotWidget w, SciPlotItem *item)
 {
   GC gc;
@@ -1138,7 +1139,7 @@ ItemGetGC (SciPlotWidget w, SciPlotItem *item)
   return gc;
 }
 
-static GC 
+static GC
 ItemGetFontGC (SciPlotWidget w, SciPlotItem *item)
 {
   GC gc;
@@ -1171,7 +1172,7 @@ ItemGetFontGC (SciPlotWidget w, SciPlotItem *item)
   return gc;
 }
 
-static void 
+static void
 ItemDraw (SciPlotWidget w, SciPlotItem *item)
 {
   XPoint point[8];
@@ -1288,7 +1289,7 @@ ItemDraw (SciPlotWidget w, SciPlotItem *item)
   }
 }
 
-static void 
+static void
 ItemDrawAll (SciPlotWidget w)
 {
   SciPlotItem *item;
@@ -1349,7 +1350,7 @@ enum PSenums {
   PSrgb
 };
 
-static void 
+static void
 ItemPSDrawAll (SciPlotWidget w, FILE *fd, double yflip, Boolean usecolor)
 {
   int i, loopcount;
@@ -1392,7 +1393,7 @@ ItemPSDrawAll (SciPlotWidget w, FILE *fd, double yflip, Boolean usecolor)
       }
 
       if (usecolor && item->kind.any.color != previouscolor) {
-        
+
           /* Get Pixel index */
         currentcolor.pixel = w->plot.colors[item->kind.any.color];
           /* Get RGBi components [0.0,1.0] */
@@ -1404,7 +1405,7 @@ ItemPSDrawAll (SciPlotWidget w, FILE *fd, double yflip, Boolean usecolor)
           psc[PSrgb].command);
 
         previouscolor=item->kind.any.color;
-        
+
       }
 
       switch (item->type) {
@@ -1502,7 +1503,7 @@ ItemPSDrawAll (SciPlotWidget w, FILE *fd, double yflip, Boolean usecolor)
   }
 }
 
-Boolean 
+Boolean
 SciPlotPSCreateFancy (SciPlotWidget w, char *filename, int drawborder, char *titles, Boolean usecolor)
 {
   FILE *fd;
@@ -1613,7 +1614,7 @@ SciPlotPSCreateFancy (SciPlotWidget w, char *filename, int drawborder, char *tit
   return True;
 }
 
-Boolean 
+Boolean
 SciPlotPSCreate (Widget wi, char *filename)
 {
   SciPlotWidget w;
@@ -1627,7 +1628,7 @@ SciPlotPSCreate (Widget wi, char *filename)
   return SciPlotPSCreateFancy(w, filename, False, NULL, False);
 }
 
-Boolean 
+Boolean
 SciPlotPSCreateColor (Widget wi, char *filename)
 {
   SciPlotWidget w;
@@ -1646,7 +1647,7 @@ SciPlotPSCreateColor (Widget wi, char *filename)
  * Private device independent drawing functions
  */
 
-static void 
+static void
 EraseClassItems (SciPlotWidget w, SciPlotDrawingEnum drawing)
 {
   SciPlotItem *item;
@@ -1667,7 +1668,7 @@ EraseClassItems (SciPlotWidget w, SciPlotDrawingEnum drawing)
   }
 }
 
-static void 
+static void
 EraseAllItems (SciPlotWidget w)
 {
   SciPlotItem *item;
@@ -1685,7 +1686,7 @@ EraseAllItems (SciPlotWidget w)
   w->plot.num_drawlist = 0;
 }
 
-static void 
+static void
 EraseAll (SciPlotWidget w)
 {
   EraseAllItems(w);
@@ -1762,7 +1763,7 @@ RectSet(SciPlotWidget w, real x1, real y1, real x2, real y2,
   ItemDraw(w, item);
 }
 
-static void 
+static void
 FilledRectSet (SciPlotWidget w, real x1, real y1, real x2, real y2, int color, int style)
 {
   SciPlotItem *item;
@@ -1788,7 +1789,7 @@ FilledRectSet (SciPlotWidget w, real x1, real y1, real x2, real y2, int color, i
   ItemDraw(w, item);
 }
 
-static void 
+static void
 TriSet (SciPlotWidget w, real x1, real y1, real x2, real y2, real x3, real y3, int color, int style)
 {
   SciPlotItem *item;
@@ -1807,7 +1808,7 @@ TriSet (SciPlotWidget w, real x1, real y1, real x2, real y2, real x3, real y3, i
   ItemDraw(w, item);
 }
 
-static void 
+static void
 FilledTriSet (SciPlotWidget w, real x1, real y1, real x2, real y2, real x3, real y3, int color, int style)
 {
   SciPlotItem *item;
@@ -1826,7 +1827,7 @@ FilledTriSet (SciPlotWidget w, real x1, real y1, real x2, real y2, real x3, real
   ItemDraw(w, item);
 }
 
-static void 
+static void
 QuadSet (SciPlotWidget w, real x1, real y1, real x2, real y2, real x3, real y3, real x4, real y4, int color, int style)
 {
   SciPlotItem *item;
@@ -1847,7 +1848,7 @@ QuadSet (SciPlotWidget w, real x1, real y1, real x2, real y2, real x3, real y3, 
   ItemDraw(w, item);
 }
 
-static void 
+static void
 FilledQuadSet (SciPlotWidget w, real x1, real y1, real x2, real y2, real x3, real y3, real x4, real y4, int color, int style)
 {
   SciPlotItem *item;
@@ -1868,7 +1869,7 @@ FilledQuadSet (SciPlotWidget w, real x1, real y1, real x2, real y2, real x3, rea
   ItemDraw(w, item);
 }
 
-static void 
+static void
 CircleSet (SciPlotWidget w, real x, real y, real r, int color, int style)
 {
   SciPlotItem *item;
@@ -1883,7 +1884,7 @@ CircleSet (SciPlotWidget w, real x, real y, real r, int color, int style)
   ItemDraw(w, item);
 }
 
-static void 
+static void
 FilledCircleSet (SciPlotWidget w, real x, real y, real r, int color, int style)
 {
   SciPlotItem *item;
@@ -1898,7 +1899,7 @@ FilledCircleSet (SciPlotWidget w, real x, real y, real r, int color, int style)
   ItemDraw(w, item);
 }
 
-static void 
+static void
 TextSet (SciPlotWidget w, real x, real y, char *text, int color, int font)
 {
   SciPlotItem *item;
@@ -1926,7 +1927,7 @@ TextSet (SciPlotWidget w, real x, real y, char *text, int color, int font)
 #endif
 }
 
-static void 
+static void
 TextCenter (SciPlotWidget w, real x, real y, char *text, int color, int font)
 {
   x -= FontnumTextWidth(w, font, text) / 2.0;
@@ -1934,7 +1935,7 @@ TextCenter (SciPlotWidget w, real x, real y, char *text, int color, int font)
   TextSet(w, x, y, text, color, font);
 }
 
-static void 
+static void
 VTextSet (SciPlotWidget w, real x, real y, char *text, int color, int font)
 {
   SciPlotItem *item;
@@ -1962,7 +1963,7 @@ VTextSet (SciPlotWidget w, real x, real y, char *text, int color, int font)
 #endif
 }
 
-static void 
+static void
 VTextCenter (SciPlotWidget w, real x, real y, char *text, int color, int font)
 {
   x += FontnumHeight(w, font) / 2.0 - FontnumDescent(w, font);
@@ -1970,7 +1971,7 @@ VTextCenter (SciPlotWidget w, real x, real y, char *text, int color, int font)
   VTextSet(w, x, y, text, color, font);
 }
 
-static void 
+static void
 ClipSet (SciPlotWidget w)
 {
   SciPlotItem *item;
@@ -1996,7 +1997,7 @@ ClipSet (SciPlotWidget w)
   }
 }
 
-static void 
+static void
 ClipClear (SciPlotWidget w)
 {
   SciPlotItem *item;
@@ -2015,7 +2016,7 @@ ClipClear (SciPlotWidget w)
  * Private data point to screen location converters
  */
 
-static real 
+static real
 PlotX (SciPlotWidget w, real xin)
 {
   real xout;
@@ -2031,7 +2032,7 @@ PlotX (SciPlotWidget w, real xin)
   return xout;
 }
 
-static real 
+static real
 PlotY (SciPlotWidget w, real yin)
 {
   real yout;
@@ -2047,7 +2048,7 @@ PlotY (SciPlotWidget w, real yin)
   return yout;
 }
 
-static void 
+static void
 PlotRTRadians (SciPlotWidget w, real r, real t, real *xout, real *yout)
 {
   *xout = w->plot.x.Center + (r * (real) cos(t) /
@@ -2056,14 +2057,14 @@ PlotRTRadians (SciPlotWidget w, real r, real t, real *xout, real *yout)
     w->plot.PolarScale * w->plot.x.Size / 2.0);
 }
 
-static void 
+static void
 PlotRTDegrees (SciPlotWidget w, real r, real t, real *xout, real *yout)
 {
   t *= DEG2RAD;
   PlotRTRadians(w, r, t, xout, yout);
 }
 
-static void 
+static void
 PlotRT (SciPlotWidget w, real r, real t, real *xout, real *yout)
 {
   if (w->plot.Degrees)
@@ -2085,7 +2086,7 @@ static int CAdecimals[8] =
 static int CAminors[8] =
 {4, 4, 4, 5, 4, 4, 4, 5};
 
-static void 
+static void
 ComputeAxis (SciPlotAxis *axis, real min, real max, Boolean log)
 {
   real range, rnorm, delta, calcmin, calcmax;
@@ -2101,10 +2102,10 @@ ComputeAxis (SciPlotAxis *axis, real min, real max, Boolean log)
       calcmin = powi(10.0, (int) floor(log10(min)));
       calcmax = powi(10.0, (int) ceil(log10(max)));
     }
-    
+
 /*     printf("calcmin=%e min=%e   calcmax=%e max=%e\n",calcmin,min, */
 /*       calcmax,max); */
-    
+
     delta = 10.0;
 
     axis->DrawOrigin = calcmin;
@@ -2181,7 +2182,7 @@ ComputeAxis (SciPlotAxis *axis, real min, real max, Boolean log)
 #endif
 }
 
-static void 
+static void
 ComputeDrawingRange (SciPlotWidget w)
 {
   if (w->plot.ChartType == XtCARTESIAN) {
@@ -2197,7 +2198,7 @@ ComputeDrawingRange (SciPlotWidget w)
   }
 }
 
-static Boolean 
+static Boolean
 CheckMinMax (SciPlotWidget w)
 {
   register int i, j;
@@ -2209,11 +2210,11 @@ CheckMinMax (SciPlotWidget w)
       p = w->plot.plotlist + i;
       if (p->draw) {
 	for (j = 0; j < p->number; j++) {
-          
+
             /* Don't count the "break in line segment" flag for Min/Max */
           if (p->data[j].x > SCIPLOT_SKIP_VAL &&
               p->data[j].y > SCIPLOT_SKIP_VAL) {
-            
+
             val = p->data[j].x;
             if (val > w->plot.x.DrawMax || val < w->plot.x.DrawOrigin)
               return True;
@@ -2240,7 +2241,7 @@ CheckMinMax (SciPlotWidget w)
   return False;
 }
 
-static void 
+static void
 ComputeMinMax (SciPlotWidget w)
 {
   register int i, j;
@@ -2256,11 +2257,11 @@ ComputeMinMax (SciPlotWidget w)
     p = w->plot.plotlist + i;
     if (p->draw) {
       for (j = 0; j < p->number; j++) {
-          
+
           /* Don't count the "break in line segment" flag for Min/Max */
         if (p->data[j].x > SCIPLOT_SKIP_VAL &&
             p->data[j].y > SCIPLOT_SKIP_VAL) {
-            
+
           val = p->data[j].x;
           if (!w->plot.XLog || (w->plot.XLog && (val > 0.0))) {
             if (firstx) {
@@ -2289,7 +2290,7 @@ ComputeMinMax (SciPlotWidget w)
             }
           }
         }
-        
+
       }
     }
   }
@@ -2361,7 +2362,7 @@ ComputeMinMax (SciPlotWidget w)
 #endif
 }
 
-static void 
+static void
 ComputeLegendDimensions (SciPlotWidget w)
 {
   real current, xmax, ymax;
@@ -2398,7 +2399,7 @@ ComputeLegendDimensions (SciPlotWidget w)
   }
 }
 
-static void 
+static void
 ComputeDimensions (SciPlotWidget w)
 {
   real x, y, width, height, axisnumbersize, axisXlabelsize, axisYlabelsize;
@@ -2440,7 +2441,7 @@ ComputeDimensions (SciPlotWidget w)
       width -= axisnumbersize;
       w->plot.x.Origin += axisnumbersize;
     }
-    
+
     if (w->plot.ShowXLabel) {
       axisXlabelsize = (real) w->plot.Margin +
 	FontnumHeight(w, w->plot.labelFont);
@@ -2467,7 +2468,7 @@ ComputeDimensions (SciPlotWidget w)
 
 }
 
-static void 
+static void
 AdjustDimensionsCartesian (SciPlotWidget w)
 {
   real xextra, yextra, val, xhorz;
@@ -2500,7 +2501,7 @@ AdjustDimensionsCartesian (SciPlotWidget w)
         xextra = 0.0;
     }
   }
-  
+
   yextra=xhorz=0.0;
   if (w->plot.YAxisNumbers) {
     precision = w->plot.y.Precision;
@@ -2511,7 +2512,7 @@ AdjustDimensionsCartesian (SciPlotWidget w)
       val = w->plot.y.DrawOrigin;
       if (p1 > 0)
         p1--;
-    
+
       val = w->plot.y.DrawMax;
       p2 = precision - w->plot.y.MajorNum;
       if (p2 < 0)
@@ -2542,7 +2543,7 @@ AdjustDimensionsCartesian (SciPlotWidget w)
       }
     }
   }
-  
+
 /* x,y is the origin of the upper left corner of the drawing area inside
  * the widget.  Doesn't necessarily have to be (Margin,Margin) as it is now.
  */
@@ -2581,7 +2582,7 @@ AdjustDimensionsCartesian (SciPlotWidget w)
     width -= axisnumbersize;
     w->plot.x.Origin += axisnumbersize;
   }
-  
+
   if (w->plot.ShowXLabel) {
     axisXlabelsize = (real) w->plot.Margin +
       FontnumHeight(w, w->plot.labelFont);
@@ -2619,7 +2620,7 @@ AdjustDimensionsCartesian (SciPlotWidget w)
       (real) w->plot.Margin -
       FontnumDescent(w, w->plot.axisFont);
   }
-  
+
   w->plot.y.LabelPos = w->plot.y.Origin + w->plot.y.Size +
     (real) w->plot.Margin + (FontnumHeight(w, w->plot.labelFont) / 2.0);
   if (w->plot.XAxisNumbers)
@@ -2640,7 +2641,7 @@ AdjustDimensionsCartesian (SciPlotWidget w)
     w->plot.x.LabelPos = w->plot.x.Origin - (real) w->plot.Margin -
         (FontnumHeight(w, w->plot.labelFont) / 2.0);
   }
-  
+
   w->plot.y.TitlePos = (real) w->core.height - (real) w->plot.Margin;
   w->plot.x.TitlePos = (real) w->plot.Margin;
 
@@ -2659,7 +2660,7 @@ AdjustDimensionsCartesian (SciPlotWidget w)
 #endif
 }
 
-static void 
+static void
 AdjustDimensionsPolar (SciPlotWidget w)
 {
   real x, y, xextra, yextra, val;
@@ -2767,7 +2768,7 @@ AdjustDimensionsPolar (SciPlotWidget w)
   w->plot.x.TitlePos = w->plot.x.Origin;
 }
 
-static void 
+static void
 AdjustDimensions (SciPlotWidget w)
 {
   if (w->plot.ChartType == XtCARTESIAN) {
@@ -2778,7 +2779,7 @@ AdjustDimensions (SciPlotWidget w)
   }
 }
 
-static void 
+static void
 ComputeAllDimensions (SciPlotWidget w)
 {
   ComputeLegendDimensions(w);
@@ -2787,7 +2788,7 @@ ComputeAllDimensions (SciPlotWidget w)
   AdjustDimensions(w);
 }
 
-static void 
+static void
 ComputeAll (SciPlotWidget w)
 {
   ComputeMinMax(w);
@@ -2799,7 +2800,7 @@ ComputeAll (SciPlotWidget w)
  * Private drawing routines
  */
 
-static void 
+static void
 DrawMarker (SciPlotWidget w, real xpaper, real ypaper, real size, int color, int style)
 {
   real sizex, sizey;
@@ -2938,7 +2939,7 @@ DrawMarker (SciPlotWidget w, real xpaper, real ypaper, real size, int color, int
   }
 }
 
-static void 
+static void
 DrawLegend (SciPlotWidget w)
 {
   real x, y, len, height, height2, len2, ascent;
@@ -2978,7 +2979,7 @@ DrawLegend (SciPlotWidget w)
   }
 }
 
-static void 
+static void
 DrawCartesianAxes (SciPlotWidget w)
 {
   real x, y, x1, y1, x2, y2, tic, val, height, majorval;
@@ -3012,7 +3013,7 @@ DrawCartesianAxes (SciPlotWidget w)
     TextSet(w, x, w->plot.y.AxisPos, label, w->plot.ForegroundColor,
       w->plot.axisFont);
   }
-  
+
   majorval = val;
   while ((majorval * 1.0001) < w->plot.x.DrawMax) {
     if (w->plot.XLog) {
@@ -3076,7 +3077,7 @@ DrawCartesianAxes (SciPlotWidget w)
     }
     majorval = val;
   }
-  
+
   precision = w->plot.y.Precision;
   sprintf(numberformat, "%%.%df", precision);
   if (w->plot.YLog) {
@@ -3182,7 +3183,7 @@ DrawCartesianAxes (SciPlotWidget w)
     }
     majorval = val;
   }
-  
+
   if (w->plot.ShowTitle)
     TextSet(w, w->plot.x.TitlePos, w->plot.y.TitlePos,
       w->plot.plotTitle, w->plot.ForegroundColor,
@@ -3198,8 +3199,8 @@ DrawCartesianAxes (SciPlotWidget w)
       w->plot.labelFont);
 }
 
-          
-static void 
+
+static void
 DrawCartesianPlot (SciPlotWidget w)
 {
   int i, j, jstart;
@@ -3213,7 +3214,7 @@ DrawCartesianPlot (SciPlotWidget w)
     if (p->draw) {
       real x1, y1, x2, y2;
       Boolean skipnext=False;
-    
+
       x1 = 0;
       y1 = 0;
       jstart = 0;
@@ -3233,7 +3234,7 @@ DrawCartesianPlot (SciPlotWidget w)
           skipnext=True;
           continue;
         }
-        
+
 	if (!((w->plot.XLog && (p->data[j].x <= 0.0)) ||
 	    (w->plot.YLog && (p->data[j].y <= 0.0)))) {
 	  x2 = PlotX(w, p->data[j].x);
@@ -3243,7 +3244,7 @@ DrawCartesianPlot (SciPlotWidget w)
 	  x1 = x2;
 	  y1 = y2;
 	}
-        
+
         skipnext=False;
       }
     }
@@ -3280,7 +3281,7 @@ DrawCartesianPlot (SciPlotWidget w)
   }
 }
 
-static void 
+static void
 DrawPolarAxes (SciPlotWidget w)
 {
   real x1, y1, x2, y2, max, tic, val, height;
@@ -3324,13 +3325,13 @@ DrawPolarAxes (SciPlotWidget w)
       TextSet(w, x2, y2 + height, label, w->plot.ForegroundColor, w->plot.axisFont);
     }
   }
-  
+
   if (w->plot.ShowTitle)
     TextSet(w, w->plot.x.TitlePos, w->plot.y.TitlePos,
       w->plot.plotTitle, w->plot.ForegroundColor, w->plot.titleFont);
 }
 
-static void 
+static void
 DrawPolarPlot (SciPlotWidget w)
 {
   int i, j;
@@ -3358,7 +3359,7 @@ DrawPolarPlot (SciPlotWidget w)
           skipnext=True;
           continue;
         }
-        
+
 	PlotRT(w, p->data[j].x, p->data[j].y, &x2, &y2);
         if (!skipnext) {
           LineSet(w, x1, y1, x2, y2,
@@ -3370,14 +3371,14 @@ DrawPolarPlot (SciPlotWidget w)
         }
 	x1 = x2;
 	y1 = y2;
-        
+
         skipnext=False;
       }
     }
   }
 }
 
-static void 
+static void
 DrawAll (SciPlotWidget w)
 {
   if (w->plot.ChartType == XtCARTESIAN) {
@@ -3392,7 +3393,7 @@ DrawAll (SciPlotWidget w)
   }
 }
 
-static Boolean 
+static Boolean
 DrawQuick (SciPlotWidget w)
 {
   Boolean range_check;
@@ -3401,7 +3402,7 @@ DrawQuick (SciPlotWidget w)
   EraseClassItems(w, SciPlotDrawingLine);
   EraseAllItems(w);
   DrawAll(w);
-  
+
   return range_check;
 }
 
@@ -3410,7 +3411,7 @@ DrawQuick (SciPlotWidget w)
  * Public Plot functions
  */
 
-int 
+int
 SciPlotAllocNamedColor (Widget wi, char *name)
 {
   XColor used, exact;
@@ -3426,7 +3427,7 @@ SciPlotAllocNamedColor (Widget wi, char *name)
   return ColorStore(w, used.pixel);
 }
 
-int 
+int
 SciPlotAllocRGBColor (Widget wi, int r, int g, int b)
 {
   XColor used;
@@ -3455,7 +3456,7 @@ SciPlotAllocRGBColor (Widget wi, int r, int g, int b)
   return ColorStore(w, used.pixel);
 }
 
-void 
+void
 SciPlotSetBackgroundColor (Widget wi, int color)
 {
   SciPlotWidget w;
@@ -3471,7 +3472,7 @@ SciPlotSetBackgroundColor (Widget wi, int color)
   }
 }
 
-void 
+void
 SciPlotSetForegroundColor (Widget wi, int color)
 {
   SciPlotWidget w;
@@ -3484,7 +3485,7 @@ SciPlotSetForegroundColor (Widget wi, int color)
     w->plot.ForegroundColor = color;
 }
 
-void 
+void
 SciPlotListDelete (Widget wi, int idnum)
 {
   SciPlotList *p;
@@ -3500,7 +3501,7 @@ SciPlotListDelete (Widget wi, int idnum)
     _ListDelete(p);
 }
 
-int 
+int
 SciPlotListCreateFromData (Widget wi, int num, real *xlist, real *ylist, char *legend, int pcolor, int pstyle, int lcolor, int lstyle)
 {
   int idnum;
@@ -3520,7 +3521,7 @@ SciPlotListCreateFromData (Widget wi, int num, real *xlist, real *ylist, char *l
   return idnum;
 }
 
-int 
+int
 SciPlotListCreateFloat (Widget wi, int num, float *xlist, float *ylist, char *legend)
 {
   int idnum;
@@ -3540,7 +3541,7 @@ SciPlotListCreateFloat (Widget wi, int num, float *xlist, float *ylist, char *le
   return idnum;
 }
 
-void 
+void
 SciPlotListUpdateFloat (Widget wi, int idnum, int num, float *xlist, float *ylist)
 {
   SciPlotList *p;
@@ -3556,7 +3557,7 @@ SciPlotListUpdateFloat (Widget wi, int idnum, int num, float *xlist, float *ylis
     _ListSetFloat(p, num, xlist, ylist);
 }
 
-void 
+void
 SciPlotListAddFloat (Widget wi, int idnum, int num, float *xlist, float *ylist)
 {
   SciPlotList *p;
@@ -3572,7 +3573,7 @@ SciPlotListAddFloat (Widget wi, int idnum, int num, float *xlist, float *ylist)
     _ListAddFloat(p, num, xlist, ylist);
 }
 
-int 
+int
 SciPlotListCreateDouble (Widget wi, int num, double *xlist, double *ylist, char *legend)
 {
   int idnum;
@@ -3592,7 +3593,7 @@ SciPlotListCreateDouble (Widget wi, int num, double *xlist, double *ylist, char 
   return idnum;
 }
 
-void 
+void
 SciPlotListUpdateDouble (Widget wi, int idnum, int num, double *xlist, double *ylist)
 {
   SciPlotList *p;
@@ -3608,7 +3609,7 @@ SciPlotListUpdateDouble (Widget wi, int idnum, int num, double *xlist, double *y
     _ListSetDouble(p, num, xlist, ylist);
 }
 
-void 
+void
 SciPlotListAddDouble (Widget wi, int idnum, int num, double *xlist, double *ylist)
 {
   SciPlotList *p;
@@ -3624,7 +3625,7 @@ SciPlotListAddDouble (Widget wi, int idnum, int num, double *xlist, double *ylis
     _ListAddDouble(p, num, xlist, ylist);
 }
 
-void 
+void
 SciPlotListSetStyle (Widget wi, int idnum, int pcolor, int pstyle, int lcolor, int lstyle)
 {
   SciPlotList *p;
@@ -3640,7 +3641,7 @@ SciPlotListSetStyle (Widget wi, int idnum, int pcolor, int pstyle, int lcolor, i
     _ListSetStyle(p, pcolor, pstyle, lcolor, lstyle);
 }
 
-void 
+void
 SciPlotListSetMarkerSize (Widget wi, int idnum, float size)
 {
   SciPlotList *p;
@@ -3656,7 +3657,7 @@ SciPlotListSetMarkerSize (Widget wi, int idnum, float size)
     p->markersize=size;
 }
 
-void 
+void
 SciPlotSetXAutoScale (Widget wi)
 {
   SciPlotWidget w;
@@ -3668,7 +3669,7 @@ SciPlotSetXAutoScale (Widget wi)
   w->plot.XAutoScale = True;
 }
 
-void 
+void
 SciPlotSetXUserScale (Widget wi, double min, double max)
 {
   SciPlotWidget w;
@@ -3684,7 +3685,7 @@ SciPlotSetXUserScale (Widget wi, double min, double max)
   }
 }
 
-void 
+void
 SciPlotSetYAutoScale (Widget wi)
 {
   SciPlotWidget w;
@@ -3696,7 +3697,7 @@ SciPlotSetYAutoScale (Widget wi)
   w->plot.YAutoScale = True;
 }
 
-void 
+void
 SciPlotSetYUserScale (Widget wi, double min, double max)
 {
   SciPlotWidget w;
@@ -3712,7 +3713,7 @@ SciPlotSetYUserScale (Widget wi, double min, double max)
   }
 }
 
-void 
+void
 SciPlotPrintStatistics (Widget wi)
 {
   int i, j;
@@ -3744,7 +3745,7 @@ SciPlotPrintStatistics (Widget wi)
   }
 }
 
-void 
+void
 SciPlotExportData (Widget wi, FILE *fd)
 {
   int i, j;
@@ -3770,20 +3771,20 @@ SciPlotExportData (Widget wi, FILE *fd)
   }
 }
 
-int 
+int
 SciPlotStoreAllocatedColor(Widget wi, Pixel p)
 {
   SciPlotWidget w;
-  
+
   if (!XtIsSciPlot(wi))
     return -1;
-  
+
   w = (SciPlotWidget) wi;
-  
+
   return ColorStore(w, p);
 }
 
-void 
+void
 SciPlotUpdate (Widget wi)
 {
   SciPlotWidget w;
@@ -3800,14 +3801,14 @@ SciPlotUpdate (Widget wi)
   DrawAll(w);
 }
 
-Boolean 
+Boolean
 SciPlotQuickUpdate (Widget wi)
 {
   SciPlotWidget w;
 
   if (!XtIsSciPlot(wi))
     return False;
-  
+
   w = (SciPlotWidget) wi;
   return DrawQuick(w);
 }
