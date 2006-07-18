@@ -1,8 +1,13 @@
 sciplot (1.36-11) unstable; urgency=low
 
-  * depend upon lesstif2-dev (closes: 374248)
+  * absorb NMU, depend upon lesstif2-dev (closes: 374248)
 
  -- Barak A. Pearlmutter <bap@debian.org>  Mon, 17 Jul 2006 21:27:40 +0100
+
+  * Non-maintainer upload.
+  * lesstif1 is deprecated, transition to lesstif2 (Closes: #374248)
+
+ -- Kai Hendry <hendry@iki.fi>  Fri, 30 Jun 2006 10:39:43 +0900
 
 sciplot (1.36-10) unstable; urgency=low
 
