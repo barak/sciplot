@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <X11/Intrinsic.h>
 #include <X11/StringDefs.h>
 #include <SciPlot.h>
