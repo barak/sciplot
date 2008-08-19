@@ -36,7 +36,7 @@ build-stamp:
 
 clean:
 	dh_testdir
-	-make clean
+	[ ! -f Makefile ] || $(MAKE) clean
 	-rm -f build
 	-rm -f *.so.*
 	-rm -f `find . -name "*~"`

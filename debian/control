@@ -1,8 +1,9 @@
 Source: sciplot
 Priority: optional
 Maintainer: Barak Pearlmutter <bap@debian.org>
-Build-Depends: debhelper, lesstif2-dev | lesstif-dev, xutils, libxmu-dev
-Standards-Version: 3.7.2
+Build-Depends: debhelper (>= 7), lesstif2-dev, libxmu-dev, xutils-dev
+Standards-Version: 3.8.0
+Section: science
 
 Package: sciplot1
 Section: libs
@@ -28,9 +29,9 @@ Description: widget for scientific plotting
 Package: sciplot-dev
 Section: libdevel
 Architecture: any
-Depends: sciplot1 (= ${Source-Version})
+Depends: sciplot1 (= ${binary:Version})
 Conflicts: sciplot
 Description: Development library and header files for SciPlot
- Contains C header files and development shared libraries libraries for
- SciPlot.  The SciPlot Widget is a widget capable of plotting Cartesian
- or polar graphs, including logarithmic axes in Cartesian plots.
+ Contains C header files and development shared libraries for SciPlot.
+ The SciPlot Widget is a widget capable of plotting Cartesian or polar
+ graphs, including logarithmic axes in Cartesian plots.

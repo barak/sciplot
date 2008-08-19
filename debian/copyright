@@ -3,8 +3,14 @@ First debianizer John Lapeyre <lapeyre@physics.arizona.edu>.
 It was downloaded from ftp://ftp.x.org/contrib/widgets/
 
 Upstream Author: Robert W. McMullen <rwmcm@orion.ae.utexas.edu>
+ http://www.ae.utexas.edu/~rwmcm
 
 Copyright:
+
+ Copyright (c) 1996 Robert W. McMullen
+
+ Portions of the subroutine XDrawVString are
+ Copyright (c) 1993 Alan Richardson <mppa3@syma.sussex.ac.uk>
 
 You are free to distribute this software under the terms of the
 GNU Library General Public License.  The full text of this license
