@@ -2,7 +2,7 @@ Source: sciplot
 Priority: optional
 Maintainer: Barak A. Pearlmutter <bap@debian.org>
 Build-Depends: debhelper (>= 7), lesstif2-dev, libxmu-dev, xutils-dev
-Standards-Version: 3.8.0
+Standards-Version: 3.8.2
 Section: science
 
 Package: sciplot1
