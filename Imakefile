@@ -1,12 +1,7 @@
 XCOMM Imakefile for widget demo programs
 
-#ifdef LinuxArchitecture
-    CC = gcc
-    EXTRA_DEFINES = -g -O3 -Wall $(PICFLAG)
-    CDEBUGFLAGS = -m486
-#    LESSTIF = -L/home/rob/src/lesstif/libXm
-#    HDOC = ~/public_html/hdoc
-#endif
+EXTRA_DEFINES = -g -O3 -Wall $(PICFLAG)
+
 #ifdef AIXArchitecture
     CC = c89
     EXTRA_DEFINES = -g
