@@ -1,0 +1,7 @@
+/*.a
+/*.o
+/.pc/
+/Makefile
+/build-stamp
+/install-stamp
+/libsciplot.so.*.*

@@ -1,0 +1,6 @@
+/*.debhelper
+/*.debhelper.log
+/*.substvars
+/files
+/sciplot-dev/
+/sciplot1/
