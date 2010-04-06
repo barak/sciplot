@@ -1,3 +1,12 @@
+sciplot (1.36-15) unstable; urgency=low
+
+  * switch from cvs to git
+  * miscellaneous build modernisations and updates
+  * mostly silence lintian
+  * dpkg-source format 3.0 (quilt)
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Tue, 06 Apr 2010 22:16:47 +0100
+
 sciplot (1.36-14) unstable; urgency=low
 
   * patch from Petr.Salinger@seznam.cz for GNU/kFreeBSD (closes: #536886)
