@@ -1,14 +1,16 @@
 Source: sciplot
-Priority: optional
+Priority: extra
 Maintainer: Barak A. Pearlmutter <bap@debian.org>
-Build-Depends: debhelper (>= 7), lesstif2-dev, libxmu-dev, xutils-dev
-Standards-Version: 3.8.2
+Build-Depends: debhelper (>= 7.2.5), lesstif2-dev, libxmu-dev, xutils-dev
+Standards-Version: 3.8.4
 Section: science
+Vcs-Git: git://git.debian.org/git/collab-maint/sciplot.git
+Vcs-Browser: http://git.debian.org/?p=collab-maint/sciplot.git
 
 Package: sciplot1
 Section: libs
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Replaces: sciplot
 Conflicts: sciplot
 Description: widget for scientific plotting
@@ -29,7 +31,7 @@ Description: widget for scientific plotting
 Package: sciplot-dev
 Section: libdevel
 Architecture: any
-Depends: sciplot1 (= ${binary:Version})
+Depends: sciplot1 (= ${binary:Version}), ${misc:Depends}
 Conflicts: sciplot
 Description: Development library and header files for SciPlot
  Contains C header files and development shared libraries for SciPlot.

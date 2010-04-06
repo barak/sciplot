@@ -1,0 +1,3 @@
+*.h usr/include/
+libsciplot.a usr/lib/
+*.html *.gif usr/share/doc/sciplot-dev/html/

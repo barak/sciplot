@@ -1,0 +1,5 @@
+*.so.*
+Makefile
+build
+build-stamp
+install-stamp

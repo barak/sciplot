@@ -1,18 +1,5 @@
 #!/usr/bin/make -f
-# Made with the aid of debmake, by Christoph Lameter,
-# based on the sample debian/rules file for GNU hello by Ian Jackson.
-
-# Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
-
 package=sciplot
-
-version=$(shell expr `pwd` : '.*-\([0-9.]*\)')
-version_major=$(shell expr `pwd` : '.*-\([0-9]*\).[0-9.]*')
-
-curdir=$(shell pwd)
-
-headers = SciPlot.h SciPlotP.h SciPlotUtil.h
 
 # Create the two so version strings for the symbolic link names
 #
@@ -20,76 +7,13 @@ command=/usr/lib/dpkg/parsechangelog/debian <debian/changelog
 v1 := $(shell $(command) |sed -n '/Version: /s;;;p' |sed -e 's/\..\+//')
 v2 := $(shell $(command) |sed -n '/Version: /s;;;p' |sed -e 's/-.\+//')
 
-# Construct the library dependency entry for shlibs
-#
-shl1=lib$(package)	$(v1)	$(package) (>= $(v2))
+%:
+	dh $@
 
-build: build-stamp
-build-stamp:
-	dh_testdir
+override_dh_auto_build:
 	xmkmf
 	$(MAKE) static
 	rm -f *.o
 	$(MAKE) MA_N=$(v1) MI_N=$(v2) PICFLAG=-fPIC shared
 
-	touch build-stamp
-
-clean:
-	dh_testdir
-	[ ! -f Makefile ] || $(MAKE) clean
-	-rm -f build
-	-rm -f *.so.*
-	-rm -f `find . -name "*~"`
-	rm -f Makefile
-	rm -f build-stamp install-stamp
-	dh_clean
-
-install: install-stamp
-install-stamp: build-stamp
-	dh_testdir
-	dh_clean -k
-	dh_installdirs
-
-	cp $(headers) debian/sciplot-dev/usr/include
-	install -m644 lib$(package).so.$(v2) debian/sciplot1/usr/lib/
-	cd debian/sciplot1/usr/lib; ln -s lib$(package).so.$(v2) lib$(package).so.$(v1)
-	cd debian/sciplot-dev/usr/lib; ln -s lib$(package).so.$(v1) lib$(package).so
-	cp lib$(package).a debian/sciplot-dev/usr/lib/
-
-	touch install-stamp
-
-binary-indep: checkroot build
-	$(checkdir)
-
-binary-arch: build install
-	dh_testdir
-	dh_testroot
-	dh_installdocs
-	mkdir debian/sciplot-dev/usr/share/doc/sciplot-dev/html
-	install -m 644 SciPlot.html debian/sciplot-dev/usr/share/doc/sciplot-dev/html
-	install -m 644 SciPlotDemo.html debian/sciplot-dev/usr/share/doc/sciplot-dev/html
-	install -m 644 SciPlotProg.html debian/sciplot-dev/usr/share/doc/sciplot-dev/html
-	install -m 644 *.gif debian/sciplot-dev/usr/share/doc/sciplot-dev/html
-	dh_installchangelogs CHANGES
-	dh_installexamples
-	dh_link
-	dh_strip
-	dh_compress
-	dh_fixperms
-	dh_installdeb
-	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
-
-define checkdir
-	test -f debian/rules
-endef
-
-binary: binary-indep binary-arch
-
-checkroot:
-	$(checkdir)
-	test root = "`whoami`"
-
-.PHONY: binary binary-arch binary-indep clean checkroot
+# dh_installchangelogs CHANGES
