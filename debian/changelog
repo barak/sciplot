@@ -40,13 +40,6 @@ sciplot (1.36-10.1) unstable; urgency=low
 
  -- Kai Hendry <hendry@iki.fi>  Fri, 30 Jun 2006 10:39:43 +0900
 
-sciplot (1.36-10.1) unstable; urgency=low
-
-  * Non-maintainer upload.
-  * lesstif1 is deprecated, transition to lesstif2 (Closes: #374248)
-
- -- Kai Hendry <hendry@iki.fi>  Fri, 30 Jun 2006 10:39:43 +0900
-
 sciplot (1.36-10) unstable; urgency=low
 
   * additional build dependency (closes: #249555)
