@@ -8,7 +8,7 @@ v1 := $(shell $(command) |sed -n '/Version: /s;;;p' |sed -e 's/\..\+//')
 v2 := $(shell $(command) |sed -n '/Version: /s;;;p' |sed -e 's/-.\+//')
 
 %:
-	dh $@
+	dh $@ --parallel
 
 override_dh_auto_build:
 	xmkmf

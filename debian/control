@@ -1,7 +1,8 @@
 Source: sciplot
 Priority: extra
 Maintainer: Barak A. Pearlmutter <bap@debian.org>
-Build-Depends: debhelper (>= 7.2.5), lesstif2-dev, libxmu-dev, xutils-dev
+Build-Depends: debhelper (>= 8),
+	lesstif2-dev, libxmu-dev, xutils-dev
 Standards-Version: 3.9.1
 Section: science
 Vcs-Git: git://git.debian.org/git/collab-maint/sciplot.git
