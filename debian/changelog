@@ -1,8 +1,10 @@
 sciplot (1.36-16) UNRELEASED; urgency=low
 
   * bump standards version (debian/control)
+  * dh --parallel (debian/rules)
+  * dh 8 (debian/compat, debian/control)
 
- -- Barak A. Pearlmutter <bap@debian.org>  Mon, 02 Aug 2010 14:38:17 +0200
+ -- Barak A. Pearlmutter <bap@debian.org>  Wed, 01 Dec 2010 12:46:25 +0000
 
 sciplot (1.36-15) unstable; urgency=low
 
