@@ -1,10 +1,12 @@
-sciplot (1.36-16) UNRELEASED; urgency=low
+sciplot (1.36-16) unstable; urgency=low
 
   * bump standards version (debian/control)
   * dh --parallel (debian/rules)
-  * dh 8 (debian/compat, debian/control)
+  * dh 9 (debian/compat, debian/control)
+  * build using motif instead of lesstif (closes: #714742)
+  * move upstream mods into quilt patches
 
- -- Barak A. Pearlmutter <bap@debian.org>  Wed, 01 Dec 2010 12:46:25 +0000
+ -- Barak A. Pearlmutter <bap@debian.org>  Tue, 02 Jul 2013 16:47:45 +0100
 
 sciplot (1.36-15) unstable; urgency=low
 
