@@ -920,7 +920,6 @@ SciPlotReadDataFile(Widget parent, FILE * fd)
   int num, i;
 
   working = NULL;
-  linecount = 0;
   count = getfields(fd);
   while (count > 0) {
     if (count > 0) {

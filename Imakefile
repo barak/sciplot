@@ -1,12 +1,20 @@
 XCOMM Imakefile for widget demo programs
 
-EXTRA_DEFINES = -g -O3 -Wall $(PICFLAG)
-
+#ifdef LinuxArchitecture
+    CC = gcc
+    EXTRA_DEFINES = -g -Wall
+    CDEBUGFLAGS = -m486
+    LESSTIF = -L/home/rob/src/lesstif/libXm
+    HDOC = ~/public_html/hdoc
+#endif
 #ifdef AIXArchitecture
     CC = c89
     EXTRA_DEFINES = -g
     CDEBUGFLAGS = 
     HDOC = hdoc
+#endif
+#ifdef AlphaArchitecture
+    CC = cc -std1
 #endif
 
 MOTIF = $(LESSTIF) -lXm
@@ -17,18 +25,15 @@ SYS_LIBRARIES = -lm
 CDEBUGFLAGS = 
 
 WIDGET = SciPlot
-#PROGRAMS = sciplot realtime
+PROGRAMS = sciplot realtime
 TARFILE = sciplot
 
-#SRCS = SciPlot.c SciPlotUtil.c xyplot.c realtime.c
-SRCS = SciPlot.c SciPlotUtil.c
+SRCS = SciPlot.c SciPlotUtil.c xyplot.c realtime.c
 HDRS = SciPlot.h SciPlotP.h SciPlotUtil.h
 OBJS = $(SRCS:.c=.o)
-#PLOTSRCS = SciPlot.c SciPlotUtil.c xyplot.c
-PLOTSRCS = SciPlot.c SciPlotUtil.c
+PLOTSRCS = SciPlot.c SciPlotUtil.c xyplot.c
 PLOTOBJS= $(PLOTSRCS:.c=.o)
-#RTSRCS = SciPlot.c SciPlotUtil.c realtime.c
-RTSRCS = SciPlot.c SciPlotUtil.c
+RTSRCS = SciPlot.c SciPlotUtil.c realtime.c
 RTOBJS= $(RTSRCS:.c=.o)
 
 DOCS = SciPlot. SciPlotProg. SciPlotDemo. gpl.
@@ -49,22 +54,13 @@ XCOMM Definitions for generating the documentation
 	$(HDOC) $*.hdoc > $*.html
 
 
-AllTarget(shared static)
+AllTarget(sciplot realtime)
 
-#NormalProgramTarget(sciplot,$(PLOTOBJS),$(MOTIFDEPS),$(MOTIFLIBS),$(SYS_LIBRARIES))
-#NormalProgramTarget(realtime,$(RTOBJS),$(MOTIFDEPS),$(MOTIFLIBS),$(SYS_LIBRARIES))
+NormalProgramTarget(sciplot,$(PLOTOBJS),$(MOTIFDEPS),$(MOTIFLIBS),$(SYS_LIBRARIES))
+NormalProgramTarget(realtime,$(RTOBJS),$(MOTIFDEPS),$(MOTIFLIBS),$(SYS_LIBRARIES))
 
 doc:	$(HOBJS) $(HDOC)
 	@echo "Updated html."
-
-shared: $(PLOTOBJS)
-	ld -shared  -o libsciplot.so.$(MI_N) SciPlot.o SciPlotUtil.o \
- $(LDOPTIONS) $(MOTIFLIBS) $(LDLIBS) $(SYS_LIBRARIES) $(EXTRA_LOAD_FLAGS) \
-    -soname libsciplot.so.$(MA_N) -lc 
-
-static: $(PLOTOBJS)
-	ar ru  libsciplot.a  SciPlot.o SciPlotUtil.o 
-	ranlib libsciplot.a
 
 version:
 	-@STUFF=../$(WIDGET)-`fgrep _WIDGET_VERSION $(WIDGET).h|cut -f2`;\
@@ -85,8 +81,7 @@ taz:	$(SRCS)
 
 # Dependencies:
 
-libsciplot.so: SciPlot.c SciPlotP.h SciPlot.h SciPlotUtil.c SciPlotUtil.h
 SciPlot.o: SciPlot.c SciPlotP.h SciPlot.h
 SciPlotUtil.o: SciPlotUtil.c SciPlotUtil.h
-#xyplot.o: xyplot.c SciPlot.h SciPlotUtil.h
-#realtime.o: realtime.c SciPlot.h SciPlotUtil.h
+xyplot.o: xyplot.c SciPlot.h SciPlotUtil.h
+realtime.o: realtime.c SciPlot.h SciPlotUtil.h

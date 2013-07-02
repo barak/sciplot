@@ -1,0 +1,44 @@
+From: "Barak A. Pearlmutter" <barak+git@cs.nuim.ie>
+Date: Tue, 2 Jul 2013 15:14:39 +0100
+Subject: initialise
+
+Initialise some variables to avoid warnings etc.
+---
+ SciPlot.c     | 4 +++-
+ SciPlotUtil.c | 1 +
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/SciPlot.c b/SciPlot.c
+index 8475d72..66d7253 100644
+--- a/SciPlot.c
++++ b/SciPlot.c
+@@ -772,7 +772,7 @@ static int
+ _ListNew (SciPlotWidget w)
+ {
+   int index;
+-  SciPlotList *p;
++  SciPlotList *p = NULL;
+   Boolean found;
+ 
+ /* First check to see if there is any free space in the index */
+@@ -3215,6 +3215,8 @@ DrawCartesianPlot (SciPlotWidget w)
+       real x1, y1, x2, y2;
+       Boolean skipnext=False;
+     
++      x1 = 0;
++      y1 = 0;
+       jstart = 0;
+       while ((jstart < p->number) &&
+         (((p->data[jstart].x <= SCIPLOT_SKIP_VAL ||
+diff --git a/SciPlotUtil.c b/SciPlotUtil.c
+index 4b391de..6e4aeaa 100644
+--- a/SciPlotUtil.c
++++ b/SciPlotUtil.c
+@@ -920,6 +920,7 @@ SciPlotReadDataFile(Widget parent, FILE * fd)
+   int num, i;
+ 
+   working = NULL;
++  linecount = 0;
+   count = getfields(fd);
+   while (count > 0) {
+     if (count > 0) {

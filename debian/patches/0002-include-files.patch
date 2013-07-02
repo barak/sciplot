@@ -1,0 +1,55 @@
+From: "Barak A. Pearlmutter" <barak+git@cs.nuim.ie>
+Date: Tue, 2 Jul 2013 15:13:57 +0100
+Subject: include files
+
+---
+ SciPlot.c  | 1 +
+ realtime.c | 5 +++--
+ xyplot.c   | 4 ++--
+ 3 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/SciPlot.c b/SciPlot.c
+index cfb7cfa..8475d72 100644
+--- a/SciPlot.c
++++ b/SciPlot.c
+@@ -26,6 +26,7 @@
+ #include <X11/StringDefs.h>
+ 
+ #include <stdio.h>
++#include <stdlib.h>
+ 
+ #include "SciPlotP.h"
+ 
+diff --git a/realtime.c b/realtime.c
+index 734ff3e..eda8267 100644
+--- a/realtime.c
++++ b/realtime.c
+@@ -22,10 +22,11 @@
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <unistd.h>
+ #include <X11/Intrinsic.h>
+ #include <X11/StringDefs.h>
+-#include "SciPlot.h"
+-#include "SciPlotUtil.h"
++#include <SciPlot.h>
++#include <SciPlotUtil.h>
+ 
+ XtAppContext app_con;
+ int line;
+diff --git a/xyplot.c b/xyplot.c
+index 6209b17..1f66e55 100644
+--- a/xyplot.c
++++ b/xyplot.c
+@@ -25,8 +25,8 @@
+ #include <X11/StringDefs.h>
+ #include <Xm/PushB.h>
+ #include <Xm/MainW.h>
+-#include "SciPlot.h"
+-#include "SciPlotUtil.h"
++#include <SciPlot.h>
++#include <SciPlotUtil.h>
+ 
+ void
+ ArgProcess(Widget parent,int argc, char *argv[])
