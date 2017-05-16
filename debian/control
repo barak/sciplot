@@ -4,7 +4,7 @@ Maintainer: Barak A. Pearlmutter <bap@debian.org>
 Build-Depends: debhelper (>= 10),
 	libparse-debianchangelog-perl,
 	libmotif-dev, libxmu-dev, xutils-dev
-Standards-Version: 3.9.4
+Standards-Version: 3.9.8
 Section: science
 Vcs-Git: git://anonscm.debian.org/collab-maint/sciplot.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/sciplot.git
