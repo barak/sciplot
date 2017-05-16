@@ -1,0 +1,21 @@
+From: "Barak A. Pearlmutter" <barak+git@pearlmutter.net>
+Date: Tue, 16 May 2017 15:20:54 +0100
+Subject: hypot
+
+---
+ SciPlot.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/SciPlot.c b/SciPlot.c
+index 66d7253..cdda9ea 100644
+--- a/SciPlot.c
++++ b/SciPlot.c
+@@ -2733,7 +2733,7 @@ AdjustDimensionsPolar (SciPlotWidget w)
+     x = w->plot.x.LegendPos - w->plot.x.Center;
+     y = (w->plot.y.LegendPos + w->plot.y.LegendSize) - w->plot.y.Center;
+ 
+-    dist = sqrt(x * x + y * y);
++    dist = hypotf(x, y);
+ /*       printf("rad=%f dist=%f: legend=(%f,%f) center=(%f,%f)\n", */
+ /*              radius,dist,w->plot.x.LegendPos,w->plot.y.LegendPos, */
+ /*              w->plot.x.Center,w->plot.y.Center); */
