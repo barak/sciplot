@@ -3,9 +3,8 @@ package=sciplot
 
 # Create the two so version strings for the symbolic link names
 #
-command=/usr/lib/dpkg/parsechangelog/debian <debian/changelog
-v1 := $(shell $(command) |sed -n '/Version: /s;;;p' |sed -e 's/\..\+//')
-v2 := $(shell $(command) |sed -n '/Version: /s;;;p' |sed -e 's/-.\+//')
+v1 := $(shell parsechangelog |sed -n '/Version: /s;;;p' |sed -e 's/\..\+//')
+v2 := $(shell parsechangelog |sed -n '/Version: /s;;;p' |sed -e 's/-.\+//')
 
 %:
 	dh $@ --parallel
