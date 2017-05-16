@@ -1,6 +1,8 @@
 #!/usr/bin/make -f
 package=sciplot
 
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
 # Create the two so version strings for the symbolic link names
 #
 v1 := $(shell parsechangelog |sed -n '/Version: /s;;;p' |sed -e 's/\..\+//')
