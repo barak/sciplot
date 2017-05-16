@@ -7,7 +7,7 @@ v1 := $(shell parsechangelog |sed -n '/Version: /s;;;p' |sed -e 's/\..\+//')
 v2 := $(shell parsechangelog |sed -n '/Version: /s;;;p' |sed -e 's/-.\+//')
 
 %:
-	dh $@ --parallel
+	dh $@
 
 override_dh_auto_build:
 	xmkmf
