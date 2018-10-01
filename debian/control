@@ -6,8 +6,8 @@ Build-Depends: debhelper (>= 10),
 	libmotif-dev, libxmu-dev, xutils-dev
 Standards-Version: 3.9.8
 Section: science
-Vcs-Git: git://anonscm.debian.org/collab-maint/sciplot.git
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/sciplot.git
+Vcs-Git: https://salsa.debian.org/debian/sciplot.git
+Vcs-Browser: https://salsa.debian.org/debian/sciplot
 
 Package: sciplot1
 Section: libs
