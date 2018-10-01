@@ -1,5 +1,5 @@
 Source: sciplot
-Priority: extra
+Priority: optional
 Maintainer: Barak A. Pearlmutter <bap@debian.org>
 Build-Depends: debhelper (>= 10),
 	libparse-debianchangelog-perl,
