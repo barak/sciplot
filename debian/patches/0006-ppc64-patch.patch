@@ -1,0 +1,26 @@
+From: "Barak A. Pearlmutter" <barak+git@pearlmutter.net>
+Date: Sat, 2 Feb 2019 16:22:53 +0000
+Subject: ppc64 patch
+
+Thanks to Thierry Fauck@linux.ibm.com, see https://bugs.debian.org/862771
+---
+ Imakefile | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/Imakefile b/Imakefile
+index dae68a3..f31f4fa 100644
+--- a/Imakefile
++++ b/Imakefile
+@@ -9,6 +9,12 @@ EXTRA_DEFINES = -g -O3 -Wall $(PICFLAG)
+     HDOC = hdoc
+ #endif
+ 
++#ifdef Ppc64Architecture
++#define DefaultNotLDOptions     -mminimal-toc
++NOTLDOPTIONS = DefaultNotLDOptions
++LDOPTIONS := $(filter-out $(NOTLDOPTIONS),$(LDOPTIONS))
++#endif
++
+ MOTIF = $(LESSTIF) -lXm
+ 
+ MOTIFDEPS = $(DEPXMLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
