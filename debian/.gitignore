@@ -1,6 +1,11 @@
 /*.debhelper
 /*.debhelper.log
 /*.substvars
+/autoreconf.after
+/autoreconf.before
+/debhelper-build-stamp
 /files
-/sciplot-dev/
-/sciplot1/
+/libsciplot-dev/
+/libsciplot1/
+/sciplot-bin/
+/tmp/

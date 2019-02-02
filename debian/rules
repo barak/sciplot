@@ -1,20 +1,13 @@
 #!/usr/bin/make -f
-package=sciplot
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-
-# Create the two so version strings for the symbolic link names
-#
-v1 := $(shell parsechangelog |sed -n '/Version: /s;;;p' |sed -e 's/\..\+//')
-v2 := $(shell parsechangelog |sed -n '/Version: /s;;;p' |sed -e 's/-.\+//')
 
 %:
 	dh $@
 
-override_dh_auto_build:
-	xmkmf
-	$(MAKE) static
-	rm -f *.o
-	$(MAKE) MA_N=$(v1) MI_N=$(v2) PICFLAG=-fPIC shared
-
-# dh_installchangelogs CHANGES
+override_dh_auto_install:
+	dh_auto_install
+	@echo Renaming executables to have sciplot- prefix.
+	-cd debian/tmp/usr/bin \
+	 && for f in *; do mv "$$f" "sciplot-$$f"; done \
+	 || echo Ignoring rename error

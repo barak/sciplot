@@ -1,20 +1,20 @@
 Source: sciplot
 Priority: optional
 Maintainer: Barak A. Pearlmutter <bap@debian.org>
-Build-Depends: debhelper (>= 10),
-	libparse-debianchangelog-perl,
+Build-Depends: debhelper (>= 12),
 	libmotif-dev, libxmu-dev, xutils-dev
-Standards-Version: 3.9.8
+Standards-Version: 4.3.0
 Section: science
 Vcs-Git: https://salsa.debian.org/debian/sciplot.git
 Vcs-Browser: https://salsa.debian.org/debian/sciplot
 
-Package: sciplot1
+Package: libsciplot1
 Section: libs
+Multi-Arch: same
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Replaces: sciplot
-Conflicts: sciplot
+Replaces: sciplot, sciplot1
+Conflicts: sciplot, sciplot1
 Description: widget for scientific plotting
  The SciPlot Widget is a widget capable of plotting Cartesian or polar
  graphs, including logarithmic axes in Cartesian plots.  The widget is
@@ -30,12 +30,24 @@ Description: widget for scientific plotting
  scales on one or both axes in Cartesian plots, and degrees or radians as
  angles in polar plots.
 
-Package: sciplot-dev
+Package: libsciplot-dev
 Section: libdevel
+Multi-Arch: same
 Architecture: any
-Depends: sciplot1 (= ${binary:Version}), ${misc:Depends}
-Conflicts: sciplot
+Depends: libsciplot1 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Replaces: sciplot-dev
+Conflicts: sciplot, sciplot-dev
 Description: Development library and header files for SciPlot
  Contains C header files and development shared libraries for SciPlot.
+ The SciPlot Widget is a widget capable of plotting Cartesian or polar
+ graphs, including logarithmic axes in Cartesian plots.
+
+Package: sciplot-bin
+Section: graphics
+Architecture: any
+Depends: libsciplot1 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: Example programs for SciPlot
+ This package contains two small programs that use the SciPlot
+ library: sciplot-xyplot and sciplot-realtime.
  The SciPlot Widget is a widget capable of plotting Cartesian or polar
  graphs, including logarithmic axes in Cartesian plots.
