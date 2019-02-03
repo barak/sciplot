@@ -1,10 +1,24 @@
-sciplot (1.36-18) UNRELEASED; urgency=medium
+sciplot (1.36-18) unstable; urgency=medium
 
+  [ Ondřej Nový ]
   * d/control: Deprecating priority extra as per policy 4.0.1
   * d/changelog: Remove trailing whitespaces
   * d/control: Set Vcs-* to salsa.debian.org
 
- -- Ondřej Nový <onovy@debian.org>  Mon, 01 Oct 2018 10:09:48 +0200
+  [ Barak A. Pearlmutter ]
+  * Major packaging update
+    - Use autotools build patch, ignoring imake (closes: #862771)
+    - Adjust to autotools installation locations.
+    - Remove unused perl script build dependency.
+    - Bump policy.
+    - Bump debhelper version.
+    - Enable multiarch.
+    - Rename lib package with "lib" prefix
+    - Put executables in "-bin" package, renamed with "sciplot-" prefix.
+    - Remove source examples; put data.txt in bin package.
+  * ppc64 imake patch, see bugs.debian.org/862771 (now unused)
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Sun, 03 Feb 2019 13:28:35 +0000
 
 sciplot (1.36-17) unstable; urgency=medium
 
