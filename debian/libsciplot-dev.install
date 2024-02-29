@@ -1,5 +1,5 @@
 usr/include/*.h
 usr/lib/*/libsciplot.so
 usr/lib/*/libsciplot.a
-usr/share/doc/sciplot/*.html /usr/share/doc/sciplot-dev/html/
-usr/share/doc/sciplot/*.gif  /usr/share/doc/sciplot-dev/html/
+usr/share/doc/sciplot/*.html /usr/share/doc/libsciplot-dev/html/
+usr/share/doc/sciplot/*.gif  /usr/share/doc/libsciplot-dev/html/

@@ -5,6 +5,7 @@ sciplot (1.36-18.2) UNRELEASED; urgency=low
   * Set debhelper-compat version in Build-Depends.
   * Update standards version to 4.6.2, no changes needed.
   * Add debian/not-installed entries for *.la, CHANGES, LICENSE
+  * Fix some documentation installation paths
 
  -- Barak A. Pearlmutter <bap@debian.org>  Thu, 29 Feb 2024 16:33:03 +0000
 
