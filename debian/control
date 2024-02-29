@@ -1,7 +1,7 @@
 Source: sciplot
 Priority: optional
 Maintainer: Barak A. Pearlmutter <bap@debian.org>
-Build-Depends: dpkg-dev (>= 1.22.5), debhelper (>= 13~),
+Build-Depends: dpkg-dev (>= 1.22.5), debhelper-compat (= 13),
 	libmotif-dev, libxmu-dev, xutils-dev
 Standards-Version: 4.3.0
 Section: science
