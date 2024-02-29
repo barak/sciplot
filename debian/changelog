@@ -1,3 +1,10 @@
+sciplot (1.36-18.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Rename libraries for 64-bit time_t transition.  Closes: #1062886
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 29 Feb 2024 15:43:50 +0000
+
 sciplot (1.36-18) unstable; urgency=medium
 
   [ Ondřej Nový ]
