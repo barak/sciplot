@@ -1,3 +1,9 @@
+sciplot (1.36-18.2) UNRELEASED; urgency=low
+
+  Trim trailing whitespace.
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Thu, 29 Feb 2024 16:33:03 +0000
+
 sciplot (1.36-18.1) unstable; urgency=medium
 
   * Non-maintainer upload.
@@ -187,4 +193,3 @@ sciplot (1.36-1) unstable; urgency=low
   * Initial Release.
 
  -- John Lapeyre <lapeyre@physics.arizona.edu>  Fri, 10 Jul 1998 16:05:22 -0700
-
