@@ -1,4 +1,4 @@
-sciplot (1.36-18.2) UNRELEASED; urgency=low
+sciplot (1.36-19) unstable; urgency=low
 
   * Trim trailing whitespace.
   * Bump debhelper from old 12 to 13.
@@ -7,7 +7,7 @@ sciplot (1.36-18.2) UNRELEASED; urgency=low
   * Add debian/not-installed entries for *.la, CHANGES, LICENSE
   * Fix some documentation installation paths
 
- -- Barak A. Pearlmutter <bap@debian.org>  Thu, 29 Feb 2024 16:33:03 +0000
+ -- Barak A. Pearlmutter <bap@debian.org>  Sun, 17 Mar 2024 15:26:23 +0000
 
 sciplot (1.36-18.1) unstable; urgency=medium
 
