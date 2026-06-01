@@ -1,6 +1,29 @@
 SciPlot Widget
 
 
+1.37
+ 1 Jun 26	Ported from X11/Xt/Motif to GTK4/Cairo/Pango
+			(Barak A. Pearlmutter <bap@debian.org>)
+			- SciPlotWidget is now a GObject-based GTK4 widget subclass
+			- Drawing uses Cairo via the snapshot() virtual method
+			  with a retained display list rendered in batch
+			- Font metrics and rendering via Pango (PangoFontDescription,
+			  pango_context_get_metrics, pango_cairo_show_layout)
+			- Vertical text via cairo_save/translate/rotate instead of
+			  the old X11 pixmap rotation technique
+			- Colors use GdkRGBA and gdk_rgba_parse instead of X11
+			  Pixel/Colormap/XAllocColor
+			- PostScript output via cairo_ps_surface_create instead of
+			  manual PS generation
+			- Public API: Widget typedef'd to GtkWidget*; Xt resource
+			  system replaced by explicit sciplot_widget_set/get_*()
+			  functions; Boolean -> gboolean; True/False -> TRUE/FALSE
+			- SciPlotUtil.c: Motif dialogs replaced with GTK4 widgets
+			- xyplot.c, realtime.c: GtkApplication replaces
+			  XtAppInitialize; g_timeout_add replaces XtAppAddTimeOut
+			- Build system: configure.ac/Makefile.am updated to use
+			  pkg-config for gtk4, cairo, cairo-ps, pangocairo
+
 1.36
  5 Sep 96	Released to ftp.x.org
  4 Sep 96	Color postscript support
