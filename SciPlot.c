@@ -1320,7 +1320,7 @@ AdjustDimensionsPolar(SciPlotWidget *w)
     real radius = size / 2.0;
     x = w->x.LegendPos - w->x.Center;
     y = (w->y.LegendPos + w->y.LegendSize) - w->y.Center;
-    if (sqrt(x*x + y*y) < radius) {
+    if (hypot(x,y) < radius) {
       width  -= w->x.LegendSize;  height -= w->y.LegendSize;
       w->x.Center = w->x.Origin + width / 2.0;
       w->y.Center = w->y.Origin + w->y.LegendSize + height / 2.0;
