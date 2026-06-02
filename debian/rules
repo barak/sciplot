@@ -4,10 +4,3 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
 	dh $@
-
-override_dh_auto_install:
-	dh_auto_install
-	@echo Renaming executables to have sciplot- prefix.
-	-cd debian/tmp/usr/bin \
-	 && for f in *; do mv "$$f" "sciplot-$$f"; done \
-	 || echo Ignoring rename error

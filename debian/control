@@ -1,9 +1,8 @@
 Source: sciplot
-Priority: optional
 Maintainer: Barak A. Pearlmutter <bap@debian.org>
 Build-Depends: dpkg-dev (>= 1.22.5), debhelper-compat (= 13),
-	libmotif-dev, libxmu-dev, xutils-dev
-Standards-Version: 4.6.2
+	libgtk-4-dev, libcairo2-dev, libpango1.0-dev, pkg-config
+Standards-Version: 4.7.4
 Section: science
 Vcs-Git: https://salsa.debian.org/debian/sciplot.git
 Vcs-Browser: https://salsa.debian.org/debian/sciplot
@@ -18,13 +17,8 @@ Depends: ${shlibs:Depends}, ${misc:Depends}
 Replaces: libsciplot1, sciplot, sciplot1
 Conflicts: sciplot, sciplot1
 Description: widget for scientific plotting
- The SciPlot Widget is a widget capable of plotting Cartesian or polar
- graphs, including logarithmic axes in Cartesian plots.  The widget is
- subclassed directly from the Core widget class, which means that it does
- not depend upon any other widget set.  It may be freely used with Athena,
- Motif, or the Open Look/Xview widget sets.  (There is optional Motif
- support that causes the widget to be subclassed from XmPrimitive.  See
- the man page.)
+ The SciPlot Widget is a GTK4/Cairo-based widget capable of plotting
+ Cartesian or polar graphs, including logarithmic axes in Cartesian plots.
  .
  Features provided in the widget include automatic scaling, legend drawing,
  axis labeling, PostScript output, multiple plotted lines, color support,
@@ -41,8 +35,8 @@ Replaces: sciplot-dev
 Conflicts: sciplot, sciplot-dev
 Description: Development library and header files for SciPlot
  Contains C header files and development shared libraries for SciPlot.
- The SciPlot Widget is a widget capable of plotting Cartesian or polar
- graphs, including logarithmic axes in Cartesian plots.
+ The SciPlot Widget is a GTK4/Cairo-based widget capable of plotting
+ Cartesian or polar graphs, including logarithmic axes in Cartesian plots.
 
 Package: sciplot-bin
 Section: graphics

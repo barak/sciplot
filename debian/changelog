@@ -1,3 +1,11 @@
+sciplot (1.37-1) unstable; urgency=medium
+
+  * New upstream release
+    - GTK4/Cairo port
+    - no more ancient C constructs (closes: #1097857)
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Mon, 01 Jun 2026 22:01:09 +0100
+
 sciplot (1.36-19) unstable; urgency=low
 
   * Trim trailing whitespace.
