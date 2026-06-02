@@ -10,7 +10,7 @@
 <li><a href="#data">Input File Format</a>
 <li><a href="#sample">Sample Input File</a>
 </ul>
-<li><a href="#realtime">realtime — Realtime Demo</a>
+<li><a href="#realtime">sciplot-realtime — Streaming real-time plotter</a>
 </ul>
 
 <ul>
@@ -109,19 +109,59 @@ Line="100% strain"
 8.387889e+00    4.000000e+00
 </pre>
 
-<p><hr><h2><a name="realtime">sciplot-realtime — Realtime Demo</a></h2>
-<p>A simple program demonstrating the real-time update API.  A
-<tt>g_timeout_add</tt> callback fires every 500 ms and randomly increments
-one of the data points.  The plot redraws after every update using
-<tt>SciPlotQuickUpdate</tt>, falling back to <tt>SciPlotUpdate</tt> when the
-axis range needs to change.
+<p><hr><h2><a name="realtime">sciplot-realtime — Streaming real-time plotter</a></h2>
 
-<p>Run it with no arguments:
+<p><tt>sciplot-realtime</tt> reads whitespace- or comma-separated numeric
+data from standard input and updates the plot as each line arrives.
 
-<p><code>sciplot-realtime</code>
+<h3>Input format</h3>
+<p>One sample per line.  Lines beginning with <tt>#</tt> are ignored.
 
-<p>Use <tt>--help</tt> for options and <tt>--version</tt> for version
-information.
+<table border>
+<tr><th>Columns per line</th><th>Interpretation</th></tr>
+<tr><td>1: <i>y</i></td>
+    <td>Single Y series; X auto-increments from 0</td></tr>
+<tr><td>2: <i>x y</i></td>
+    <td>Explicit X and one Y series</td></tr>
+<tr><td>N: <i>x y1 y2 …</i></td>
+    <td>Explicit X and N−1 Y series</td></tr>
+</table>
+
+<p>The number of series is fixed by the first data line.
+When standard input reaches EOF the plot window stays open for
+interactive use (axis toggles, PostScript export, etc.).
+
+<h3>Options</h3>
+<table border>
+<tr><th>Option</th><th>Description</th></tr>
+<tr><td><tt>-t, --title TEXT</tt></td><td>Plot title (default: "Real-time Data")</td></tr>
+<tr><td><tt>-x, --xlabel TEXT</tt></td><td>X axis label</td></tr>
+<tr><td><tt>-y, --ylabel TEXT</tt></td><td>Y axis label</td></tr>
+<tr><td><tt>-l, --legend NAME,...</tt></td><td>Comma-separated series names</td></tr>
+<tr><td><tt>-V, --version</tt></td><td>Show version and exit</td></tr>
+<tr><td><tt>-h, --help</tt></td><td>Show help and exit</td></tr>
+</table>
+
+<h3>Usage</h3>
+
+<p><code>sciplot-realtime [OPTION...]</code>
+
+<p>Examples:
+
+<pre>
+# Plot a single sensor channel
+sensor-tool | sciplot-realtime --ylabel "Temperature (C)"
+
+# Plot multiple channels with named series
+multi-sensor | sciplot-realtime --legend "ch1,ch2,ch3" --xlabel "Sample"
+
+# Non-interactive preview of a data file
+sciplot-realtime &lt; data.txt
+
+# Plot ping round-trip times
+ping host | awk '/time=/{gsub(/.*time=/,""); gsub(/ .*/,""); print}' \
+          | sciplot-realtime --ylabel "RTT (ms)"
+</pre>
 
 <hr>
 

@@ -28,7 +28,7 @@ Features:
 - Full colour support with named and RGB colour allocation
 - User-selectable fonts (Times, Courier, Helvetica, Lucida, LucidaSans, New Century Schoolbook; size and bold/italic attributes)
 - PostScript (EPS) output via Cairo PS surface
-- Real-time update via `SciPlotQuickUpdate` / `SciPlotUpdate`
+- Real-time streaming updates via `SciPlotQuickUpdate` / `SciPlotUpdate`
 - Horizontal or vertical Y-axis tick labels
 
 
@@ -67,12 +67,25 @@ sciplot-xyplot data.txt
 sciplot-xyplot --help
 ```
 
-**`sciplot-realtime`** — demonstrates the quick-update API with a
-live-updating plot.
+**`sciplot-realtime`** — reads whitespace-separated numeric data from
+standard input and updates the plot as each line arrives.  Column structure
+is inferred from the first data line:
+
+| Columns | Interpretation |
+|---------|----------------|
+| 1: *y* | single Y series; X auto-increments from 0 |
+| 2: *x y* | explicit X and one Y series |
+| N: *x y1 y2 …* | explicit X and N−1 Y series |
+
+Lines starting with `#` are ignored.  When stdin closes the window stays
+open for interactive use.
 
 ```sh
-sciplot-realtime
+sensor-tool | sciplot-realtime --ylabel "Temperature (C)"
+multi-sensor | sciplot-realtime --legend "ch1,ch2,ch3"
+sciplot-realtime < data.txt
 sciplot-realtime --help
+yes | awk '{print NR, sqrt(NR)*sin(NR/10.0)}' | pv --rate-limit=1000 --quiet | sciplot-realtime
 ```
 
 The text file format accepted by `sciplot-xyplot` is documented in
