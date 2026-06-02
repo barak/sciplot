@@ -1,0 +1,48 @@
+[DESCRIPTION]
+\fBsciplot-realtime\fR reads whitespace- or comma-separated numeric data
+from standard input and updates the plot as each line arrives.
+
+.SS "Input format"
+One sample per line; lines beginning with \fB#\fR are ignored.
+
+.TP
+One column per line (\fIy\fR)
+The value is plotted on the Y axis; X auto-increments from 0.
+
+.TP
+Two columns per line (\fIx y\fR)
+The first column is the X value, the second the Y value.
+
+.TP
+N columns per line (\fIx y1 y2 \&...\fR)
+The first column is X; each remaining column is a separate Y series.
+
+The number of series is fixed by the first data line; subsequent lines
+with fewer columns leave the remaining series unchanged for that sample.
+
+When standard input reaches EOF the plot window remains open for
+interactive use (axis toggles, PostScript export, etc.).
+
+[EXAMPLES]
+.TP
+Plot a single signal from a sensor:
+.B sensor-tool | sciplot-realtime --ylabel "Temperature (C)"
+
+.TP
+Plot multiple signals with named series:
+.B multi-sensor | sciplot-realtime --legend "ch1,ch2,ch3" --xlabel "Sample"
+
+.TP
+Plot from a file (non-interactive preview):
+.B sciplot-realtime < data.txt
+
+.TP
+Plot the output of ping round-trip times:
+.B ping host | awk '/time=/{gsub(/.*time=/,""); gsub(/ .*/,""); print}' | sciplot-realtime --ylabel "RTT (ms)" --xlabel "Packet"
+
+[SEE ALSO]
+.BR sciplot-xyplot (1)
+
+[AUTHOR]
+Written by Rob McMullen.
+GTK4/Cairo port and rewrite by Barak A. Pearlmutter <bap@debian.org>.

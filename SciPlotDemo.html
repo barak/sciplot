@@ -1,113 +1,83 @@
-<html><head><title>SciPlot Widget Demo Program</title></head><body>
-<h1><a name="top">SciPlot Demo Program</a></h1>
-
-
-
-
-
+<html><head><title>SciPlot Widget Demo Programs</title></head><body>
+<h1><a name="top">SciPlot Demo Programs</a></h1>
 
 <ul>
-<li><a href="#comp">Compilation Instructions</a>
-<li><a href="#sciplot">x/y plotter</a>
-
+<li><a href="#comp">Building</a>
+<li><a href="#sciplot">xyplot — x/y plotter</a>
 <ul>
-<li><a href="#screen">Screen Shots</a>
+<li><a href="#screen">Screen Shot</a>
 <li><a href="#usage">Usage</a>
 <li><a href="#data">Input File Format</a>
 <li><a href="#sample">Sample Input File</a>
 </ul>
-<li><a href="#realtime">Realtime Demo</a>
-<ul>
-<li><a href="#realtime_usage">Usage</a>
+<li><a href="#realtime">sciplot-realtime — Streaming real-time plotter</a>
 </ul>
-</ul>
-
 
 <ul>
-<li>
-<a href="SciPlot.html">SciPlot General Info</a>
-<li>
-<a href="SciPlotProg.html">Programmer's Documentation</a>
+<li><a href="SciPlot.html">SciPlot General Info</a>
+<li><a href="SciPlotProg.html">Programmer's Documentation</a>
 </ul>
 
-<p><hr><h2><a name="comp">Compilation Instructions</a></h2>
-<p>Shipped with the source code distribution are two demo programs
-that show some of the features of the SciPlot widget.  <b>NOTE!  The demo
-programs require Motif, but the SciPlot widget itself does not.</b>
+<p><hr><h2><a name="comp">Building</a></h2>
+<p>Two demo programs are shipped with the source distribution.  Both require
+GTK4, Cairo, and Pango (via <tt>pkg-config</tt>).  Build with the standard
+autotools sequence:
 
-<p>If you have the program imake installed, you may use the supplied Imakefile
-to generate a Makefile.  Otherwise, copy the file Makefile.noImake to Makefile,
-and edit that to conform to your system.  Actually, other than specifying the
-C compiler to use, the Makefile should require little customization.
+<p><code>autoreconf -fi &amp;&amp; ./configure &amp;&amp; make</code>
 
-<p>To generate the Makefile, type:
+<p>The two programs produced are <tt>sciplot-xyplot</tt> and
+<tt>sciplot-realtime</tt>.
 
-<p><code>xmkmf</code>
+<p><hr><h2><a name="sciplot">sciplot-xyplot — x/y plotter</a></h2>
 
-<p>To compile both demo programs, type:
+<p>The <tt>sciplot-xyplot</tt> program takes a text file (or standard input)
+as input and plots the data as x/y or polar plots.  More than one set of data
+may appear in a single plot frame, and more than one plot frame may be
+displayed at once.  As shown in the <a href="#screen">screen shot</a>, many
+widget features are available as interactive controls before generating a
+PostScript copy.
 
-<p><code>make</code>
-
-
-
-<p><hr><h2><a name="sciplot">x/y plotter</a></h2>
-
-<p>The SciPlot Demo program takes a text file (or standard input) as input
-and plots the data from that file as x/y or polar plots.  More than one 
-set of x/y (polar) line data may appear in a single plot frame, and more
-than one plot frame may be displayed on the screen.  As shown in the
-<a href="#screen">plot frame controls</a>
-, many features of the SciPlot widget are available for customization before
-generating a postscript copy.
-
-<h3><a name="screen">Screen Shots</a></h3>
+<h3><a name="screen">Screen Shot</a></h3>
 
 <img src=SciPlotDemo.gif alt="[Picture of demo frame]">
 
 <h3><a name="usage">Usage</a></h3>
 
-<p>The SciPlot Demo program is made automatically when compiling the SciPlot
-Widget source code, as shipped.  It is called "sciplot" and is executed by
-typing:
+<p><code>sciplot-xyplot [OPTION...] [FILE...]</code>
 
-<p><code>sciplot data.txt</code>
-
-<p>where data.txt is a sciplot input file, described below.  Note that sciplot
-can also read multiple input files on the same command line, or read from
-standard input.
+<p><tt>sciplot-xyplot</tt> accepts one or more input files on the command
+line, or reads from standard input if none are given.  Use
+<tt>--help</tt> for a full option list and <tt>--version</tt> for version
+information.
 
 <h3><a name="data">Input File Format</a></h3>
-<p>There are 5 commands that sciplot recognizes in the input file.  Optional
-items are enclosed in [square brackets].
+<p>There are five commands recognised in the input file.  Optional items are
+enclosed in [square brackets].
 
 <dl>
-<dt>Title [title]
-<dd>Signifies the start of a new plot, and optionally specifies the title
-for the plot.
+<dt><b>Title [title]</b>
+<dd>Starts a new plot window, optionally setting the plot title.
 
-<dt>Xaxis [x axis label]
-<dd>Optional x axis label
+<dt><b>Xaxis [label]</b>
+<dd>Sets the x-axis label.
 
-<dt>Yaxis [y axis label]
-<dd>Optional y axis label
+<dt><b>Yaxis [label]</b>
+<dd>Sets the y-axis label.
 
-<dt>Polar [rad]
-<dd>Polar plot flag.  If not present, the form is assumed to be a cartesian
-(x/y) plot.
+<dt><b>Polar [rad]</b>
+<dd>Switches the current plot to polar mode.  Angles are in degrees by
+default; add the keyword <tt>rad</tt> for radians.
 
-<dt>Line legend-label
-<dd>Begins a new line of data to be added to the current plot.  The values
-to be added immediately follow this line in the input file; and the program
-will continue to add lines until another command is reached, or the file ends.
-<p>Data is free format, but must be separated by a comma, equal sign, or
-whitespace.  Both the x and y (r and theta) coordinates must appear on the
-same line of text in the file.
-<p>In place of a line of x/y data, the keyword "skip" may be substituted.
-This causes a break in the current line, which allows lines to contain
-multiple disjointed line segments.
+<dt><b>Line legend-label</b>
+<dd>Begins a new data series.  Data lines follow immediately; the parser
+continues reading pairs of numbers until it encounters another command or
+end-of-file.  Values are separated by commas, equals signs, or whitespace;
+both coordinates must appear on the same line.
+<p>The keyword <tt>skip</tt> may appear in place of a data line to break the
+line into disjoint segments (see <tt>SCIPLOT_SKIP_VAL</tt>).
 </dl>
 
-<p>Any text labels in the file should be enclosed in quotation characters.
+<p>Text labels should be enclosed in double-quote characters.
 
 <h3><a name="sample">Sample Input File</a></h3>
 <pre>
@@ -137,24 +107,67 @@ Line="100% strain"
 6.219232e+00    3.000000e+00
 7.458972e+00    3.500000e+00
 8.387889e+00    4.000000e+00
-
 </pre>
 
-<p><hr><h2><a name="realtime">Realtime Demo</a></h2>
-<p>This is just a simple program that uses the realtime updating capabilities
-of the widget.  Instituted in the program is a timed callback
-(XtAppAddTimeOut) that simply randomly increments one of the points every
-half second.  The plot is redrawn after every update.
+<p><hr><h2><a name="realtime">sciplot-realtime — Streaming real-time plotter</a></h2>
 
-<h3><a name="realtime_usage">Usage</a></h3>
-<p>Just execute the program "realtime" to see this demo.
-It takes no arguments.
+<p><tt>sciplot-realtime</tt> reads whitespace- or comma-separated numeric
+data from standard input and updates the plot as each line arrives.
+
+<h3>Input format</h3>
+<p>One sample per line.  Lines beginning with <tt>#</tt> are ignored.
+
+<table border>
+<tr><th>Columns per line</th><th>Interpretation</th></tr>
+<tr><td>1: <i>y</i></td>
+    <td>Single Y series; X auto-increments from 0</td></tr>
+<tr><td>2: <i>x y</i></td>
+    <td>Explicit X and one Y series</td></tr>
+<tr><td>N: <i>x y1 y2 …</i></td>
+    <td>Explicit X and N−1 Y series</td></tr>
+</table>
+
+<p>The number of series is fixed by the first data line.
+When standard input reaches EOF the plot window stays open for
+interactive use (axis toggles, PostScript export, etc.).
+
+<h3>Options</h3>
+<table border>
+<tr><th>Option</th><th>Description</th></tr>
+<tr><td><tt>-t, --title TEXT</tt></td><td>Plot title (default: "Real-time Data")</td></tr>
+<tr><td><tt>-x, --xlabel TEXT</tt></td><td>X axis label</td></tr>
+<tr><td><tt>-y, --ylabel TEXT</tt></td><td>Y axis label</td></tr>
+<tr><td><tt>-l, --legend NAME,...</tt></td><td>Comma-separated series names</td></tr>
+<tr><td><tt>-V, --version</tt></td><td>Show version and exit</td></tr>
+<tr><td><tt>-h, --help</tt></td><td>Show help and exit</td></tr>
+</table>
+
+<h3>Usage</h3>
+
+<p><code>sciplot-realtime [OPTION...]</code>
+
+<p>Examples:
+
+<pre>
+# Plot a single sensor channel
+sensor-tool | sciplot-realtime --ylabel "Temperature (C)"
+
+# Plot multiple channels with named series
+multi-sensor | sciplot-realtime --legend "ch1,ch2,ch3" --xlabel "Sample"
+
+# Non-interactive preview of a data file
+sciplot-realtime &lt; data.txt
+
+# Plot ping round-trip times
+ping host | awk '/time=/{gsub(/.*time=/,""); gsub(/ .*/,""); print}' \
+          | sciplot-realtime --ylabel "RTT (ms)"
+</pre>
 
 <hr>
 
 <br>	<a href=SciPlot.html>SciPlot</a> :
 	<a href=SciPlotProg.html>Programmer's Reference</a> |
 	<a href=SciPlotDemo.html>Demo Programs</a>
-<br>	<a href=ListTree.html>ListTree</a> :
-	<a href=ListTreeProg.html>Programmer's Reference</a>
-<br><hr>Web Page Design by <a href="http://www.ae.utexas.edu/~rwmcm">Rob McMullen</a><br>E-mail: <a href="mailto:rwmcm@mail.ae.utexas.edu">rwmcm@mail.ae.utexas.edu</a><br>Updated: 4 Sep 96<br></body></html>
+<br><hr>Originally by <a href="mailto:rwmcm@mail.ae.utexas.edu">Rob McMullen</a>.
+GTK4 port by <a href="mailto:bap@debian.org">Barak A. Pearlmutter</a>.
+Updated: 2 Jun 2026<br></body></html>

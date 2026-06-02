@@ -1,12 +1,20 @@
-#if __STDC__ || defined(__cplusplus)
-#define P_(s) s
-#else
-#define P_(s) ()
+#ifndef _SCIPLOTUTIL_H
+#define _SCIPLOTUTIL_H
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-/* SciPlotUtil.c */
-Widget SciPlotDialog P_((Widget parent, char *title));
-void SciPlotDialogPopup P_((Widget w));
-void SciPlotReadDataFile P_((Widget parent, FILE *fd));
+#include <gtk/gtk.h>
+#include <stdio.h>
+#include "SciPlot.h"
 
-#undef P_
+GtkWidget *SciPlotDialog(GtkWidget *parent, const char *title);
+void       SciPlotDialogPopup(GtkWidget *plot);
+void       SciPlotReadDataFile(GtkWidget *parent, FILE *fd);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _SCIPLOTUTIL_H */

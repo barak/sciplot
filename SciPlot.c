@@ -13,472 +13,269 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Library General Public License for more details.
  *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, write to the Free
- * Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- *
  * Author: Rob McMullen <rwmcm@mail.ae.utexas.edu>
- *         http://www.ae.utexas.edu/~rwmcm
+ * GTK4/Cairo port: Barak A. Pearlmutter <bap@debian.org>
  */
-
-#include <X11/IntrinsicP.h>
-#include <X11/StringDefs.h>
 
 #include <stdio.h>
+#include <string.h>
+#include <math.h>
 
 #include "SciPlotP.h"
+#include <cairo/cairo-ps.h>
 
-#define offset(field) XtOffsetOf(SciPlotRec, plot.field)
-static XtResource resources[] =
-{
-  {XtNchartType, XtCMargin, XtRInt, sizeof(int),
-    offset(ChartType), XtRImmediate, (XtPointer) XtCARTESIAN},
-  {XtNdegrees, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(Degrees), XtRImmediate, (XtPointer) True},
-  {XtNdrawMajor, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(DrawMajor), XtRImmediate, (XtPointer) True},
-  {XtNdrawMajorTics, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(DrawMajorTics), XtRImmediate, (XtPointer) True},
-  {XtNdrawMinor, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(DrawMinor), XtRImmediate, (XtPointer) True},
-  {XtNdrawMinorTics, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(DrawMinorTics), XtRImmediate, (XtPointer) True},
-  {XtNmonochrome, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(Monochrome), XtRImmediate, (XtPointer) False},
-  {XtNshowLegend, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(ShowLegend), XtRImmediate, (XtPointer) True},
-  {XtNshowTitle, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(ShowTitle), XtRImmediate, (XtPointer) True},
-  {XtNshowXLabel, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(ShowXLabel), XtRImmediate, (XtPointer) True},
-  {XtNshowYLabel, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(ShowYLabel), XtRImmediate, (XtPointer) True},
-  {XtNxLabel, XtCString, XtRString, sizeof(String),
-    offset(TransientXLabel), XtRString, "X Axis"},
-  {XtNyLabel, XtCString, XtRString, sizeof(String),
-    offset(TransientYLabel), XtRString, "Y Axis"},
-  {XtNplotTitle, XtCString, XtRString, sizeof(String),
-    offset(TransientPlotTitle), XtRString, "Plot"},
-  {XtNmargin, XtCMargin, XtRInt, sizeof(int),
-    offset(Margin), XtRImmediate, (XtPointer) 5},
-  {XtNtitleMargin, XtCMargin, XtRInt, sizeof(int),
-    offset(TitleMargin), XtRImmediate, (XtPointer) 16},
-  {XtNlegendLineSize, XtCMargin, XtRInt, sizeof(int),
-    offset(LegendLineSize), XtRImmediate, (XtPointer) 16},
-  {XtNdefaultMarkerSize, XtCMargin, XtRInt, sizeof(int),
-    offset(DefaultMarkerSize), XtRImmediate, (XtPointer) 3},
-  {XtNlegendMargin, XtCMargin, XtRInt, sizeof(int),
-    offset(LegendMargin), XtRImmediate, (XtPointer) 3},
-  {XtNlegendThroughPlot, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(LegendThroughPlot), XtRImmediate, (XtPointer) False},
-  {XtNtitleFont, XtCMargin, XtRInt, sizeof(int),
-    offset(TitleFont), XtRImmediate, (XtPointer) (XtFONT_HELVETICA | 24)},
-  {XtNlabelFont, XtCMargin, XtRInt, sizeof(int),
-    offset(LabelFont), XtRImmediate, (XtPointer) (XtFONT_TIMES | 18)},
-  {XtNaxisFont, XtCMargin, XtRInt, sizeof(int),
-    offset(AxisFont), XtRImmediate, (XtPointer) (XtFONT_TIMES | 10)},
-  {XtNxAutoScale, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(XAutoScale), XtRImmediate, (XtPointer) True},
-  {XtNyAutoScale, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(YAutoScale), XtRImmediate, (XtPointer) True},
-  {XtNxAxisNumbers, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(XAxisNumbers), XtRImmediate, (XtPointer) True},
-  {XtNyAxisNumbers, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(YAxisNumbers), XtRImmediate, (XtPointer) True},
-  {XtNxLog, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(XLog), XtRImmediate, (XtPointer) False},
-  {XtNyLog, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(YLog), XtRImmediate, (XtPointer) False},
-  {XtNxOrigin, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(XOrigin), XtRImmediate, (XtPointer) False},
-  {XtNyOrigin, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(YOrigin), XtRImmediate, (XtPointer) False},
-  {XtNyNumbersHorizontal, XtCBoolean, XtRBoolean, sizeof(Boolean),
-    offset(YNumHorz), XtRImmediate, (XtPointer) True},
-};
+/* --------------------------------------------------------------------------
+ * Forward declarations
+ */
+static void  ComputeAll(SciPlotWidget *w);
+static void  ComputeAllDimensions(SciPlotWidget *w);
+static void  DrawAll(SciPlotWidget *w);
+static void  ItemDrawAll(SciPlotWidget *w, cairo_t *cr);
+static void  ItemDraw(SciPlotWidget *w, SciPlotItem *item, cairo_t *cr);
+static void  EraseAll(SciPlotWidget *w);
+static void  EraseAllItems(SciPlotWidget *w);
+static int   ColorStore(SciPlotWidget *w, const GdkRGBA *color);
+static int   FontStore(SciPlotWidget *w, int flag);
+static int   FontnumReplace(SciPlotWidget *w, int fontnum, int flag);
+static void  FontnumStore(SciPlotWidget *w, int fontnum, int flag);
+static real  FontnumHeight(SciPlotWidget *w, int fontnum);
+static real  FontnumAscent(SciPlotWidget *w, int fontnum);
+static real  FontnumDescent(SciPlotWidget *w, int fontnum);
+static real  FontnumTextWidth(SciPlotWidget *w, int fontnum, const char *text);
 
+/* --------------------------------------------------------------------------
+ * Font description table
+ */
 static SciPlotFontDesc font_desc_table[] =
 {
-  {XtFONT_TIMES, "Times", "times", False, True},
-  {XtFONT_COURIER, "Courier", "courier", True, False},
-  {XtFONT_HELVETICA, "Helvetica", "helvetica", True, False},
-  {XtFONT_LUCIDA, "Lucida", "lucidabright", False, False},
-  {XtFONT_LUCIDASANS, "LucidaSans", "lucida", False, False},
-  {XtFONT_NCSCHOOLBOOK, "NewCenturySchlbk",
-    "new century schoolbook", False, True},
-  {-1, NULL, NULL, False, False},
+  {XtFONT_TIMES,        "Times",            "Times New Roman",      FALSE, TRUE},
+  {XtFONT_COURIER,      "Courier",          "Courier New",          TRUE,  FALSE},
+  {XtFONT_HELVETICA,    "Helvetica",        "Helvetica",            TRUE,  FALSE},
+  {XtFONT_LUCIDA,       "Lucida",           "Lucida Bright",        FALSE, FALSE},
+  {XtFONT_LUCIDASANS,   "LucidaSans",       "Lucida Sans",          FALSE, FALSE},
+  {XtFONT_NCSCHOOLBOOK, "NewCenturySchlbk", "Century Schoolbook L", FALSE, TRUE},
+  {-1, NULL, NULL, FALSE, FALSE},
 };
 
-/*
- * Private function declarations
+/* ==========================================================================
+ * GObject / GTK4 widget boilerplate
  */
 
-static void Redisplay();
-static void Resize();
-static Boolean SetValues();
-static void GetValuesHook();
-static void Initialize();
-static void Realize();
-static void Destroy();
-
-static void ComputeAll();
-static void ComputeAllDimensions();
-static void DrawAll();
-static void ItemDrawAll();
-static void ItemDraw();
-static void EraseAll();
-static void FontInit();
-static int ColorStore();
-static int FontStore();
-static int FontnumReplace();
-
-
-
-SciPlotClassRec sciplotClassRec =
-{
-  {
-    /* core_class fields        */
-#ifdef MOTIF
-    /* superclass               */ (WidgetClass) & xmPrimitiveClassRec,
-#else
-    /* superclass               */ (WidgetClass) & widgetClassRec,
-#endif
-    /* class_name               */ "SciPlot",
-    /* widget_size              */ sizeof(SciPlotRec),
-    /* class_initialize         */ NULL,
-    /* class_part_initialize    */ NULL,
-    /* class_inited             */ False,
-    /* initialize               */ Initialize,
-    /* initialize_hook          */ NULL,
-    /* realize                  */ Realize,
-    /* actions                  */ NULL,
-    /* num_actions              */ 0,
-    /* resources                */ resources,
-    /* num_resources            */ XtNumber(resources),
-    /* xrm_class                */ NULLQUARK,
-    /* compress_motion          */ True,
-    /* compress_exposure        */ XtExposeCompressMultiple,
-    /* compress_enterleave      */ True,
-    /* visible_interest         */ True,
-    /* destroy                  */ Destroy,
-    /* resize                   */ Resize,
-    /* expose                   */ Redisplay,
-    /* set_values               */ SetValues,
-    /* set_values_hook          */ NULL,
-    /* set_values_almost        */ XtInheritSetValuesAlmost,
-    /* get_values_hook          */ GetValuesHook,
-    /* accept_focus             */ NULL,
-    /* version                  */ XtVersion,
-    /* callback_private         */ NULL,
-    /* tm_table                 */ NULL,
-    /* query_geometry           */ NULL,
-    /* display_accelerator      */ XtInheritDisplayAccelerator,
-    /* extension                */ NULL
-  },
-#ifdef MOTIF
-  {
-    /* primitive_class fields   */
-    /* border_highlight         */ (XtWidgetProc) _XtInherit,
-    /* border_unhighligh        */ (XtWidgetProc) _XtInherit,
-    /* translations             */ XtInheritTranslations,
-    /* arm_and_activate         */ (XtWidgetProc) _XtInherit,
-    /* syn_resources            */ NULL,
-    /* num_syn_resources        */ 0,
-    /* extension                */ NULL
-  },
-#endif
-  {
-    /* plot_class fields        */
-    /* dummy                    */ 0
-    /* (some stupid compilers barf on empty structures) */
-  }
-};
-
-WidgetClass sciplotWidgetClass = (WidgetClass) & sciplotClassRec;
-
+G_DEFINE_TYPE(SciPlotWidget, sciplot_widget, GTK_TYPE_WIDGET)
 
 static void
-Initialize(Widget treq, Widget tnew, ArgList args, Cardinal *num)
+sciplot_finalize(GObject *object)
 {
-  SciPlotWidget new;
-
-  new = (SciPlotWidget) tnew;
-
-  new->plot.plotlist = NULL;
-  new->plot.alloc_plotlist = 0;
-  new->plot.num_plotlist = 0;
-
-  new->plot.alloc_drawlist = NUMPLOTITEMALLOC;
-  new->plot.drawlist = (SciPlotItem *) XtCalloc(new->plot.alloc_drawlist,
-    sizeof(SciPlotItem));
-  new->plot.num_drawlist = 0;
-
-  new->plot.cmap = DefaultColormap(XtDisplay(new),
-    DefaultScreen(XtDisplay(new)));
-
-  new->plot.xlabel = (char *) XtMalloc(strlen(new->plot.TransientXLabel) + 1);
-  strcpy(new->plot.xlabel, new->plot.TransientXLabel);
-  new->plot.ylabel = (char *) XtMalloc(strlen(new->plot.TransientYLabel) + 1);
-  strcpy(new->plot.ylabel, new->plot.TransientYLabel);
-  new->plot.plotTitle = (char *) XtMalloc(strlen(new->plot.TransientPlotTitle) + 1);
-  strcpy(new->plot.plotTitle, new->plot.TransientPlotTitle);
-  new->plot.TransientXLabel=NULL;
-  new->plot.TransientYLabel=NULL;
-  new->plot.TransientPlotTitle=NULL;
-
-  new->plot.colors = NULL;
-  new->plot.num_colors = 0;
-  new->plot.fonts = NULL;
-  new->plot.num_fonts = 0;
-
-  new->plot.update = FALSE;
-  new->plot.UserMin.x = new->plot.UserMin.y = 0.0;
-  new->plot.UserMax.x = new->plot.UserMax.y = 10.0;
-
-  new->plot.titleFont = FontStore(new, new->plot.TitleFont);
-  new->plot.labelFont = FontStore(new, new->plot.LabelFont);
-  new->plot.axisFont = FontStore(new, new->plot.AxisFont);
-}
-
-static void
-GCInitialize(SciPlotWidget new)
-{
-  XGCValues values;
-  XtGCMask mask;
-  long colorsave;
-
-  values.line_style = LineSolid;
-  values.line_width = 0;
-  values.fill_style = FillSolid;
-  values.background = WhitePixelOfScreen(XtScreen(new));
-  values.background = new->core.background_pixel;
-  new->plot.BackgroundColor = ColorStore(new, values.background);
-#ifdef MOTIF
-  new->core.background_pixel = values.background;
-#endif
-  values.foreground = colorsave = BlackPixelOfScreen(XtScreen(new));
-  new->plot.ForegroundColor = ColorStore(new, values.foreground);
-
-  mask = GCLineStyle | GCLineWidth | GCFillStyle | GCForeground | GCBackground;
-  new->plot.defaultGC = XCreateGC(XtDisplay(new),XtWindow(new), mask, &values);
-
-  values.foreground = colorsave;
-  values.line_style = LineOnOffDash;
-  new->plot.dashGC = XCreateGC(XtDisplay(new),XtWindow(new), mask, &values);
-}
-
-static void
-Realize(Widget aw, XtValueMask * value_mask, XSetWindowAttributes * attributes)
-{
-  SciPlotWidget w = (SciPlotWidget) aw;
-
-#define	superclass	(&widgetClassRec)
-  (*superclass->core_class.realize) (aw, value_mask, attributes);
-#undef	superclass
-
-  GCInitialize(w);
-}
-
-static void
-Destroy(SciPlotWidget w)
-{
+  SciPlotWidget *w = SCIPLOT_WIDGET(object);
   int i;
   SciPlotFont *pf;
   SciPlotList *p;
 
-  XFreeGC(XtDisplay(w), w->plot.defaultGC);
-  XFreeGC(XtDisplay(w), w->plot.dashGC);
-  XtFree((char *) w->plot.xlabel);
-  XtFree((char *) w->plot.ylabel);
-  XtFree((char *) w->plot.plotTitle);
+  g_free(w->xlabel);
+  g_free(w->ylabel);
+  g_free(w->plotTitle);
 
-  for (i = 0; i < w->plot.num_fonts; i++) {
-    pf = &w->plot.fonts[i];
-    XFreeFont(XtDisplay((Widget) w), pf->font);
+  for (i = 0; i < w->num_fonts; i++) {
+    pf = &w->fonts[i];
+    if (pf->desc)
+      pango_font_description_free(pf->desc);
   }
-  XtFree((char *) w->plot.fonts);
+  g_free(w->fonts);
+  g_free(w->colors);
 
-  XtFree((char *) w->plot.colors);
-
-  for (i = 0; i < w->plot.alloc_plotlist; i++) {
-    p = w->plot.plotlist + i;
+  for (i = 0; i < w->alloc_plotlist; i++) {
+    p = w->plotlist + i;
     if (p->allocated > 0)
-      XtFree((char *) p->data);
-    if (p->legend)
-      XtFree(p->legend);
+      g_free(p->data);
+    g_free(p->legend);
   }
-  if (w->plot.alloc_plotlist > 0)
-    XtFree((char *) w->plot.plotlist);
+  if (w->alloc_plotlist > 0)
+    g_free(w->plotlist);
 
-  EraseAll(w);
-  XtFree((char *) w->plot.drawlist);
-}
+  EraseAllItems(w);
+  g_free(w->drawlist);
 
-static Boolean
-SetValues(SciPlotWidget current, SciPlotWidget request, SciPlotWidget new,
-  ArgList args, Cardinal nargs)
-{
-  Boolean redisplay = FALSE;
-
-  if (current->plot.XLog != new->plot.XLog)
-    redisplay = TRUE;
-  else if (current->plot.YLog != new->plot.YLog)
-    redisplay = TRUE;
-  else if (current->plot.XOrigin != new->plot.XOrigin)
-    redisplay = TRUE;
-  else if (current->plot.YOrigin != new->plot.YOrigin)
-    redisplay = TRUE;
-  else if (current->plot.XAxisNumbers != new->plot.XAxisNumbers)
-    redisplay = TRUE;
-  else if (current->plot.YAxisNumbers != new->plot.YAxisNumbers)
-    redisplay = TRUE;
-  else if (current->plot.DrawMajor != new->plot.DrawMajor)
-    redisplay = TRUE;
-  else if (current->plot.DrawMajorTics != new->plot.DrawMajorTics)
-    redisplay = TRUE;
-  else if (current->plot.DrawMinor != new->plot.DrawMinor)
-    redisplay = TRUE;
-  else if (current->plot.DrawMinorTics != new->plot.DrawMinorTics)
-    redisplay = TRUE;
-  else if (current->plot.ChartType != new->plot.ChartType)
-    redisplay = TRUE;
-  else if (current->plot.Degrees != new->plot.Degrees)
-    redisplay = TRUE;
-  else if (current->plot.ShowLegend != new->plot.ShowLegend)
-    redisplay = TRUE;
-  else if (current->plot.ShowTitle != new->plot.ShowTitle)
-    redisplay = TRUE;
-  else if (current->plot.ShowXLabel != new->plot.ShowXLabel)
-    redisplay = TRUE;
-  else if (current->plot.ShowYLabel != new->plot.ShowYLabel)
-    redisplay = TRUE;
-  else if (current->plot.ShowTitle != new->plot.ShowTitle)
-    redisplay = TRUE;
-  else if (current->plot.Monochrome != new->plot.Monochrome)
-    redisplay = TRUE;
-  
-  if (new->plot.TransientXLabel) {
-    if (current->plot.TransientXLabel != new->plot.TransientXLabel ||
-        strcmp(new->plot.TransientXLabel,current->plot.xlabel)!=0) {
-      redisplay = TRUE;
-      XtFree(current->plot.xlabel);
-      new->plot.xlabel = (char *) XtMalloc(strlen(new->plot.TransientXLabel) + 1);
-      strcpy(new->plot.xlabel, new->plot.TransientXLabel);
-      new->plot.TransientXLabel=NULL;
-    }
-  }
-  if (new->plot.TransientYLabel) {
-    if (current->plot.TransientYLabel != new->plot.TransientYLabel ||
-        strcmp(new->plot.TransientYLabel,current->plot.ylabel)!=0) {
-      redisplay = TRUE;
-      XtFree(current->plot.ylabel);
-      new->plot.ylabel = (char *) XtMalloc(strlen(new->plot.TransientYLabel) + 1);
-      strcpy(new->plot.ylabel, new->plot.TransientYLabel);
-      new->plot.TransientYLabel=NULL;
-    }
-  }
-  if (new->plot.TransientPlotTitle) {
-    if (current->plot.TransientPlotTitle != new->plot.TransientPlotTitle ||
-        strcmp(new->plot.TransientPlotTitle,current->plot.plotTitle)!=0) {
-      redisplay = TRUE;
-      XtFree(current->plot.plotTitle);
-      new->plot.plotTitle = (char *) XtMalloc(strlen(new->plot.TransientPlotTitle) + 1);
-      strcpy(new->plot.plotTitle, new->plot.TransientPlotTitle);
-      new->plot.TransientPlotTitle=NULL;
-    }
-  }
-  
-  if (current->plot.AxisFont != new->plot.AxisFont) {
-    redisplay = TRUE;
-    FontnumReplace(new, new->plot.axisFont, new->plot.AxisFont);
-  }
-  if (current->plot.TitleFont != new->plot.TitleFont) {
-    redisplay = TRUE;
-    FontnumReplace(new, new->plot.titleFont, new->plot.TitleFont);
-  }
-  if (current->plot.LabelFont != new->plot.LabelFont) {
-    redisplay = TRUE;
-    FontnumReplace(new, new->plot.labelFont, new->plot.LabelFont);
-  }
-
-  new->plot.update = redisplay;
-
-  return redisplay;
+  G_OBJECT_CLASS(sciplot_widget_parent_class)->finalize(object);
 }
 
 static void
-GetValuesHook(SciPlotWidget w, ArgList args, Cardinal *num_args)
+sciplot_snapshot(GtkWidget *widget, GtkSnapshot *snapshot)
 {
-  int i;
-  char **loc;
+  SciPlotWidget *w = SCIPLOT_WIDGET(widget);
+  int width  = gtk_widget_get_width(widget);
+  int height = gtk_widget_get_height(widget);
 
-  for (i=0; i<*num_args; i++) {
-    loc=(char **)args[i].value;
-    if (strcmp(args[i].name,XtNplotTitle)==0)
-      *loc=w->plot.plotTitle;
-    else if (strcmp(args[i].name,XtNxLabel)==0)
-      *loc=w->plot.xlabel;
-    else if (strcmp(args[i].name,XtNyLabel)==0)
-      *loc=w->plot.ylabel;
-      
-  }
-}
-
-
-static void
-Redisplay(SciPlotWidget w)
-{
-  if (!XtIsRealized((Widget)w))
+  if (width <= 0 || height <= 0)
     return;
-  
-  if (w->plot.update) {
-    Resize(w);
-    w->plot.update = FALSE;
+
+  graphene_rect_t bounds = GRAPHENE_RECT_INIT(0, 0, (float)width, (float)height);
+  cairo_t *cr = gtk_snapshot_append_cairo(snapshot, &bounds);
+
+  /* Paint background */
+  if (w->num_colors > w->BackgroundColor) {
+    GdkRGBA *bg = &w->colors[w->BackgroundColor];
+    cairo_set_source_rgba(cr, bg->red, bg->green, bg->blue, bg->alpha);
+  } else {
+    cairo_set_source_rgb(cr, 1, 1, 1);
   }
-  else {
-    ItemDrawAll(w);
+  cairo_paint(cr);
+
+  ItemDrawAll(w, cr);
+
+  cairo_destroy(cr);
+}
+
+static void
+sciplot_size_allocate(GtkWidget *widget, int width, int height, int baseline)
+{
+  GTK_WIDGET_CLASS(sciplot_widget_parent_class)->size_allocate(
+    widget, width, height, baseline);
+
+  SciPlotWidget *w = SCIPLOT_WIDGET(widget);
+  if (gtk_widget_get_realized(widget)) {
+    EraseAll(w);
+    ComputeAll(w);
+    DrawAll(w);
   }
 }
 
 static void
-Resize(SciPlotWidget w)
+sciplot_measure(GtkWidget *widget, GtkOrientation orientation, int for_size,
+                int *minimum, int *natural,
+                int *minimum_baseline, int *natural_baseline)
 {
-  if (!XtIsRealized((Widget)w))
-    return;
-  
-  EraseAll(w);
-  ComputeAll(w);
-  DrawAll(w);
+  (void)widget; (void)for_size;
+  *minimum = (orientation == GTK_ORIENTATION_HORIZONTAL) ? 200 : 150;
+  *natural = (orientation == GTK_ORIENTATION_HORIZONTAL) ? 500 : 400;
+  *minimum_baseline = *natural_baseline = -1;
 }
 
+static void
+sciplot_widget_class_init(SciPlotWidgetClass *klass)
+{
+  GObjectClass   *gobject_class = G_OBJECT_CLASS(klass);
+  GtkWidgetClass *widget_class  = GTK_WIDGET_CLASS(klass);
 
-/*
- * Private SciPlot utility functions
+  gobject_class->finalize      = sciplot_finalize;
+  widget_class->snapshot       = sciplot_snapshot;
+  widget_class->size_allocate  = sciplot_size_allocate;
+  widget_class->measure        = sciplot_measure;
+
+  gtk_widget_class_set_css_name(widget_class, "sciplot");
+}
+
+static void
+sciplot_widget_init(SciPlotWidget *w)
+{
+  /* Default property values */
+  w->ChartType         = XtCARTESIAN;
+  w->Degrees           = TRUE;
+  w->DrawMajor         = TRUE;
+  w->DrawMajorTics     = TRUE;
+  w->DrawMinor         = TRUE;
+  w->DrawMinorTics     = TRUE;
+  w->Monochrome        = FALSE;
+  w->ShowLegend        = TRUE;
+  w->ShowTitle         = TRUE;
+  w->ShowXLabel        = TRUE;
+  w->ShowYLabel        = TRUE;
+  w->XAutoScale        = TRUE;
+  w->YAutoScale        = TRUE;
+  w->XAxisNumbers      = TRUE;
+  w->YAxisNumbers      = TRUE;
+  w->XLog              = FALSE;
+  w->YLog              = FALSE;
+  w->XOrigin           = FALSE;
+  w->YOrigin           = FALSE;
+  w->YNumHorz          = TRUE;
+  w->LegendThroughPlot = FALSE;
+  w->Margin            = 5;
+  w->TitleMargin       = 16;
+  w->LegendLineSize    = 16;
+  w->DefaultMarkerSize = 3;
+  w->LegendMargin      = 3;
+  w->MajorTicSize      = 5;
+  w->TitleFont         = XtFONT_HELVETICA | 24;
+  w->LabelFont         = XtFONT_TIMES     | 18;
+  w->AxisFont          = XtFONT_TIMES     | 10;
+
+  w->plotTitle = g_strdup("Plot");
+  w->xlabel    = g_strdup("X Axis");
+  w->ylabel    = g_strdup("Y Axis");
+
+  w->colors     = NULL;
+  w->num_colors = 0;
+  w->fonts      = NULL;
+  w->num_fonts  = 0;
+
+  w->plotlist       = NULL;
+  w->alloc_plotlist = 0;
+  w->num_plotlist   = 0;
+
+  w->alloc_drawlist = NUMPLOTITEMALLOC;
+  w->drawlist       = g_new0(SciPlotItem, w->alloc_drawlist);
+  w->num_drawlist   = 0;
+
+  w->update          = FALSE;
+  w->needs_recompute = FALSE;
+  w->UserMin.x = w->UserMin.y = 0.0;
+  w->UserMax.x = w->UserMax.y = 10.0;
+
+  /* Default background (white=0) and foreground (black=1) */
+  {
+    GdkRGBA white = {1.0, 1.0, 1.0, 1.0};
+    GdkRGBA black = {0.0, 0.0, 0.0, 1.0};
+    w->BackgroundColor = ColorStore(w, &white);
+    w->ForegroundColor = ColorStore(w, &black);
+  }
+
+  w->titleFont = FontStore(w, w->TitleFont);
+  w->labelFont = FontStore(w, w->LabelFont);
+  w->axisFont  = FontStore(w, w->AxisFont);
+}
+
+GtkWidget *
+sciplot_widget_new(void)
+{
+  return GTK_WIDGET(g_object_new(SCIPLOT_TYPE_WIDGET, NULL));
+}
+
+/* ==========================================================================
+ * Color management
  */
 
-
-static int 
-ColorStore (SciPlotWidget w, Pixel color)
+static int
+ColorStore(SciPlotWidget *w, const GdkRGBA *color)
 {
-  w->plot.num_colors++;
-  w->plot.colors = (Pixel *) XtRealloc((char *) w->plot.colors,
-    sizeof(Pixel) * w->plot.num_colors);
-  w->plot.colors[w->plot.num_colors - 1] = color;
-  return w->plot.num_colors - 1;
+  w->num_colors++;
+  w->colors = g_realloc(w->colors, sizeof(GdkRGBA) * w->num_colors);
+  w->colors[w->num_colors - 1] = *color;
+  return w->num_colors - 1;
 }
 
-static void 
-FontnumStore (SciPlotWidget w, int fontnum, int flag)
+/* ==========================================================================
+ * Font management (Pango-based)
+ */
+
+static SciPlotFontDesc *
+FontDescLookup(int flag)
 {
-  SciPlotFont *pf;
-  int fontflag, sizeflag, attrflag;
+  SciPlotFontDesc *pfd = font_desc_table;
+  while (pfd->flag >= 0) {
+    if ((flag & XtFONT_NAME_MASK) == pfd->flag)
+      return pfd;
+    pfd++;
+  }
+  return NULL;
+}
 
-  pf = &w->plot.fonts[fontnum];
-
-  fontflag = flag & XtFONT_NAME_MASK;
-  sizeflag = flag & XtFONT_SIZE_MASK;
-  attrflag = flag & XtFONT_ATTRIBUTE_MASK;
+static void
+FontnumStore(SciPlotWidget *w, int fontnum, int flag)
+{
+  SciPlotFont *pf = &w->fonts[fontnum];
+  int fontflag = flag & XtFONT_NAME_MASK;
+  int sizeflag = flag & XtFONT_SIZE_MASK;
+  int attrflag = flag & XtFONT_ATTRIBUTE_MASK;
 
   switch (fontflag) {
   case XtFONT_TIMES:
@@ -492,10 +289,8 @@ FontnumStore (SciPlotWidget w, int fontnum, int flag)
     fontflag = XtFONT_NAME_DEFAULT;
     break;
   }
-
   if (sizeflag < 1)
     sizeflag = XtFONT_SIZE_DEFAULT;
-
   switch (attrflag) {
   case XtFONT_BOLD:
   case XtFONT_ITALIC:
@@ -505,2281 +300,1049 @@ FontnumStore (SciPlotWidget w, int fontnum, int flag)
     attrflag = XtFONT_ATTRIBUTE_DEFAULT;
     break;
   }
-  pf->id = flag;
-  FontInit(w, pf);
+
+  SciPlotFontDesc *pfd = FontDescLookup(fontflag);
+  const char *family = pfd ? pfd->Pango : "serif";
+
+  PangoFontDescription *desc = pango_font_description_new();
+  pango_font_description_set_family(desc, family);
+  pango_font_description_set_size(desc, sizeflag * PANGO_SCALE);
+  if (attrflag & XtFONT_BOLD)
+    pango_font_description_set_weight(desc, PANGO_WEIGHT_BOLD);
+  if (attrflag & XtFONT_ITALIC)
+    pango_font_description_set_style(desc, PANGO_STYLE_ITALIC);
+
+  if (pf->desc)
+    pango_font_description_free(pf->desc);
+  pf->id   = flag;
+  pf->desc = desc;
 }
 
-static int 
-FontnumReplace (SciPlotWidget w, int fontnum, int flag)
+static int
+FontStore(SciPlotWidget *w, int flag)
 {
-  SciPlotFont *pf;
-
-  pf = &w->plot.fonts[fontnum];
-  XFreeFont(XtDisplay(w), pf->font);
-
+  w->num_fonts++;
+  w->fonts = g_realloc(w->fonts, sizeof(SciPlotFont) * w->num_fonts);
+  int fontnum = w->num_fonts - 1;
+  w->fonts[fontnum].id   = 0;
+  w->fonts[fontnum].desc = NULL;
   FontnumStore(w, fontnum, flag);
-
   return fontnum;
 }
 
-static int 
-FontStore (SciPlotWidget w, int flag)
+static int
+FontnumReplace(SciPlotWidget *w, int fontnum, int flag)
 {
-  int fontnum;
-
-  w->plot.num_fonts++;
-  w->plot.fonts = (SciPlotFont *) XtRealloc((char *) w->plot.fonts,
-    sizeof(SciPlotFont) * w->plot.num_fonts);
-  fontnum = w->plot.num_fonts - 1;
-
   FontnumStore(w, fontnum, flag);
-
   return fontnum;
 }
 
-static SciPlotFontDesc *
-FontDescLookup (int flag)
+static PangoFontMetrics *
+get_font_metrics(SciPlotWidget *w, int fontnum)
 {
-  SciPlotFontDesc *pfd;
-
-  pfd = font_desc_table;
-  while (pfd->flag >= 0) {
-#ifdef DEBUG_SCIPLOT
-    printf("checking if %d == %d (font %s)\n",
-      flag & XtFONT_NAME_MASK, pfd->flag, pfd->PostScript);
-#endif
-    if ((flag & XtFONT_NAME_MASK) == pfd->flag)
-      return pfd;
-    pfd++;
-  }
-  return NULL;
-}
-
-
-static void 
-FontnumPostScriptString (SciPlotWidget w, int fontnum, char *str)
-{
-  char temp[128];
-  int flag, bold, italic;
-  SciPlotFontDesc *pfd;
-
-  flag = w->plot.fonts[fontnum].id;
-  pfd = FontDescLookup(flag);
-  if (pfd) {
-    strcpy(temp, pfd->PostScript);
-    bold = False;
-    italic = False;
-    if (flag & XtFONT_BOLD) {
-      bold = True;
-      strcat(temp, "-Bold");
-    }
-    if (flag & XtFONT_ITALIC) {
-      italic = True;
-      if (!bold)
-	strcat(temp, "-");
-      if (pfd->PSUsesOblique)
-	strcat(temp, "Oblique");
-      else
-	strcat(temp, "Italic");
-    }
-    if (!bold && !italic && pfd->PSUsesRoman) {
-      strcat(temp, "-Roman");
-    }
-
-    sprintf(str, "/%s findfont %d scalefont",
-      temp,
-      (flag & XtFONT_SIZE_MASK));
-  }
-  else
-    sprintf(str, "/Courier findfond 10 scalefont");
-}
-
-static void 
-FontX11String (int flag, char *str)
-{
-  SciPlotFontDesc *pfd;
-
-  pfd = FontDescLookup(flag);
-  if (pfd) {
-    sprintf(str, "-*-%s-%s-%s-*-*-%d-*-*-*-*-*-*-*",
-      pfd->X11,
-      (flag & XtFONT_BOLD ? "bold" : "medium"),
-      (flag & XtFONT_ITALIC ? (pfd->PSUsesOblique ? "o" : "i") : "r"),
-      (flag & XtFONT_SIZE_MASK));
-  }
-  else
-    sprintf(str, "fixed");
-#ifdef DEBUG_SCIPLOT
-  printf("font string=%s\n", str);
-#endif
-}
-
-static void 
-FontInit (SciPlotWidget w, SciPlotFont *pf)
-{
-  char str[256], **list;
-  int num;
-
-  FontX11String(pf->id, str);
-  list = XListFonts(XtDisplay(w), str, 100, &num);
-#ifdef DEBUG_SCIPLOT
-  if (1) {
-    int i;
-
-    i = 0;
-    while (i < num) {
-      printf("Found font: %s\n", list[i]);
-      i++;
-    }
-  }
-#endif
-  if (num <= 0) {
-    pf->id &= ~XtFONT_ATTRIBUTE_MASK;
-    pf->id |= XtFONT_ATTRIBUTE_DEFAULT;
-    FontX11String(pf->id, str);
-    list = XListFonts(XtDisplay(w), str, 100, &num);
-#ifdef DEBUG_SCIPLOT
-    if (1) {
-      int i;
-
-      i = 0;
-      while (i < num) {
-	printf("Attr reset: found: %s\n", list[i]);
-	i++;
-      }
-    }
-#endif
-  }
-  if (num <= 0) {
-    pf->id &= ~XtFONT_NAME_MASK;
-    pf->id |= XtFONT_NAME_DEFAULT;
-    FontX11String(pf->id, str);
-    list = XListFonts(XtDisplay(w), str, 100, &num);
-#ifdef DEBUG_SCIPLOT
-    if (1) {
-      int i;
-
-      i = 0;
-      while (i < num) {
-	printf("Name reset: found: %s\n", list[i]);
-	i++;
-      }
-    }
-#endif
-  }
-  if (num <= 0) {
-    pf->id &= ~XtFONT_SIZE_MASK;
-    pf->id |= XtFONT_SIZE_DEFAULT;
-    FontX11String(pf->id, str);
-    list = XListFonts(XtDisplay(w), str, 100, &num);
-#ifdef DEBUG_SCIPLOT
-    if (1) {
-      int i;
-
-      i = 0;
-      while (i < num) {
-	printf("Size reset: found: %s\n", list[i]);
-	i++;
-      }
-    }
-#endif
-  }
-  if (num <= 0)
-    strcpy(str, "fixed");
-  else
-    XFreeFontNames(list);
-  pf->font = XLoadQueryFont(XtDisplay(w), str);
-}
-
-static XFontStruct *
-FontFromFontnum (SciPlotWidget w, int fontnum)
-{
-  XFontStruct *f;
-
-  if (fontnum >= w->plot.num_fonts)
+  if (fontnum < 0 || fontnum >= w->num_fonts)
     fontnum = 0;
-  f = w->plot.fonts[fontnum].font;
-  return f;
+  PangoContext *ctx = gtk_widget_get_pango_context(GTK_WIDGET(w));
+  return pango_context_get_metrics(ctx, w->fonts[fontnum].desc, NULL);
 }
 
 static real
-FontHeight(XFontStruct *f)
+FontnumHeight(SciPlotWidget *w, int fontnum)
 {
-  return (real) (f->max_bounds.ascent + f->max_bounds.descent);
+  PangoFontMetrics *m = get_font_metrics(w, fontnum);
+  real h = (real)PANGO_PIXELS(pango_font_metrics_get_ascent(m) +
+                               pango_font_metrics_get_descent(m));
+  pango_font_metrics_unref(m);
+  return h;
 }
 
 static real
-FontnumHeight(SciPlotWidget w, int fontnum)
+FontnumAscent(SciPlotWidget *w, int fontnum)
 {
-  XFontStruct *f;
-
-  f = FontFromFontnum(w, fontnum);
-  return FontHeight(f);
+  PangoFontMetrics *m = get_font_metrics(w, fontnum);
+  real a = (real)PANGO_PIXELS(pango_font_metrics_get_ascent(m));
+  pango_font_metrics_unref(m);
+  return a;
 }
 
 static real
-FontDescent(XFontStruct *f)
+FontnumDescent(SciPlotWidget *w, int fontnum)
 {
-  return (real) (f->max_bounds.descent);
+  PangoFontMetrics *m = get_font_metrics(w, fontnum);
+  real d = (real)PANGO_PIXELS(pango_font_metrics_get_descent(m));
+  pango_font_metrics_unref(m);
+  return d;
 }
 
 static real
-FontnumDescent(SciPlotWidget w, int fontnum)
+FontnumTextWidth(SciPlotWidget *w, int fontnum, const char *text)
 {
-  XFontStruct *f;
-
-  f = FontFromFontnum(w, fontnum);
-  return FontDescent(f);
+  if (!text || !*text)
+    return 0.0;
+  if (fontnum < 0 || fontnum >= w->num_fonts)
+    fontnum = 0;
+  PangoContext *ctx = gtk_widget_get_pango_context(GTK_WIDGET(w));
+  PangoLayout *layout = pango_layout_new(ctx);
+  pango_layout_set_font_description(layout, w->fonts[fontnum].desc);
+  pango_layout_set_text(layout, text, -1);
+  int width, height;
+  pango_layout_get_pixel_size(layout, &width, &height);
+  g_object_unref(layout);
+  return (real)width;
 }
 
-static real
-FontAscent(XFontStruct *f)
-{
-  return (real) (f->max_bounds.ascent);
-}
-
-static real
-FontnumAscent(SciPlotWidget w, int fontnum)
-{
-  XFontStruct *f;
-
-  f = FontFromFontnum(w, fontnum);
-  return FontAscent(f);
-}
-
-static real
-FontTextWidth(XFontStruct *f, char *c)
-{
-  return (real) XTextWidth(f, c, strlen(c));
-}
-
-static real
-FontnumTextWidth(SciPlotWidget w, int fontnum, char *c)
-{
-  XFontStruct *f;
-
-  f = FontFromFontnum(w, fontnum);
-  return FontTextWidth(f, c);
-}
-
-
-/*
- * Private List functions
+/* ==========================================================================
+ * Drawing utilities -- Cairo-based
  */
 
-static int 
-_ListNew (SciPlotWidget w)
+static void
+SetItemColor(SciPlotWidget *w, SciPlotItem *item, cairo_t *cr)
 {
-  int index;
-  SciPlotList *p;
-  Boolean found;
-
-/* First check to see if there is any free space in the index */
-  found = FALSE;
-  for (index = 0; index < w->plot.num_plotlist; index++) {
-    p = w->plot.plotlist + index;
-    if (!p->used) {
-      found = TRUE;
-      break;
-    }
-  }
-
-/* If no space is found, increase the size of the index */
-  if (!found) {
-    w->plot.num_plotlist++;
-    if (w->plot.alloc_plotlist == 0) {
-      w->plot.alloc_plotlist = NUMPLOTLINEALLOC;
-      w->plot.plotlist = (SciPlotList *) XtCalloc(w->plot.alloc_plotlist, sizeof(SciPlotList));
-      if (!w->plot.plotlist) {
-	printf("Can't calloc memory for SciPlotList\n");
-	exit(1);
-      }
-      w->plot.alloc_plotlist = NUMPLOTLINEALLOC;
-    }
-    else if (w->plot.num_plotlist > w->plot.alloc_plotlist) {
-      w->plot.alloc_plotlist += NUMPLOTLINEALLOC;
-      w->plot.plotlist = (SciPlotList *) XtRealloc((char *) w->plot.plotlist,
-	w->plot.alloc_plotlist * sizeof(SciPlotList));
-      if (!w->plot.plotlist) {
-	printf("Can't realloc memory for SciPlotList\n");
-	exit(1);
-      }
-    }
-    index = w->plot.num_plotlist - 1;
-    p = w->plot.plotlist + index;
-  }
-
-  p->LineStyle = p->LineColor = p->PointStyle = p->PointColor = 0;
-  p->number = p->allocated = 0;
-  p->data = NULL;
-  p->legend = NULL;
-  p->draw = p->used = TRUE;
-  p->markersize = (real) w->plot.DefaultMarkerSize;
-  return index;
+  int color;
+  short c = item->kind.any.color;
+  if (w->Monochrome)
+    color = (c > 0) ? w->ForegroundColor : w->BackgroundColor;
+  else if (c >= w->num_colors)
+    color = w->ForegroundColor;
+  else if (c <= 0)
+    color = w->BackgroundColor;
+  else
+    color = c;
+  GdkRGBA *rgba = &w->colors[color];
+  cairo_set_source_rgba(cr, rgba->red, rgba->green, rgba->blue, rgba->alpha);
 }
 
-static void 
-_ListDelete (SciPlotList *p)
+static void
+SetItemLineStyle(SciPlotItem *item, cairo_t *cr)
 {
-  p->draw = p->used = FALSE;
-  p->number = p->allocated = 0;
-  if (p->data)
-    XtFree((char *) p->data);
-  p->data = NULL;
-  if (p->legend)
-    XtFree((char *) p->legend);
-  p->legend = NULL;
-}
-
-static SciPlotList *
-_ListFind (SciPlotWidget w, int id)
-{
-  SciPlotList *p;
-
-  if ((id >= 0) && (id < w->plot.num_plotlist)) {
-    p = w->plot.plotlist + id;
-    if (p->used)
-      return p;
+  switch (item->kind.any.style) {
+  case XtLINE_SOLID:
+    cairo_set_dash(cr, NULL, 0, 0);
+    break;
+  case XtLINE_DOTTED: {
+    double d[] = {1.0, 2.0};
+    cairo_set_dash(cr, d, 2, 0);
+    break;
   }
-  return NULL;
-}
-
-static void 
-_ListSetStyle (SciPlotList *p, int pcolor, int pstyle, int lcolor, int lstyle)
-{
-/* Note!  Do checks in here later on... */
-
-  if (lstyle >= 0)
-    p->LineStyle = lstyle;
-  if (lcolor >= 0)
-    p->LineColor = lcolor;
-  if (pstyle >= 0)
-    p->PointStyle = pstyle;
-  if (pcolor >= 0)
-    p->PointColor = pcolor;
-}
-
-static void 
-_ListSetLegend (SciPlotList *p, char *legend)
-{
-/* Note!  Do checks in here later on... */
-
-  p->legend = (char *) XtMalloc(strlen(legend) + 1);
-  strcpy(p->legend, legend);
-}
-
-static void 
-_ListAllocData (SciPlotList *p, int num)
-{
-  if (p->data) {
-    XtFree((char *) p->data);
-    p->allocated = 0;
+  case XtLINE_WIDEDOT: {
+    double d[] = {1.0, 8.0};
+    cairo_set_dash(cr, d, 2, 0);
+    break;
   }
-  p->allocated = num + NUMPLOTDATAEXTRA;
-  p->data = (realpair *) XtCalloc(p->allocated, sizeof(realpair));
-  if (!p->data) {
-    p->number = p->allocated = 0;
-  }
-}
-
-static void 
-_ListReallocData (SciPlotList *p, int more)
-{
-  if (!p->data) {
-    _ListAllocData(p, more);
-  }
-  else if (p->number + more > p->allocated) {
-    p->allocated += more + NUMPLOTDATAEXTRA;
-    p->data = (realpair *) XtRealloc((char *) p->data, p->allocated * sizeof(realpair));
-    if (!p->data) {
-      p->number = p->allocated = 0;
-    }
-  }
-
-}
-
-static void 
-_ListAddReal (SciPlotList *p, int num, real *xlist, real *ylist)
-{
-  int i;
-
-  _ListReallocData(p, num);
-  if (p->data) {
-    for (i = 0; i < num; i++) {
-      p->data[i + p->number].x = xlist[i];
-      p->data[i + p->number].y = ylist[i];
-    }
-    p->number += num;
-  }
-}
-
-static void 
-_ListAddFloat (SciPlotList *p, int num, float *xlist, float *ylist)
-{
-  int i;
-
-  _ListReallocData(p, num);
-  if (p->data) {
-    for (i = 0; i < num; i++) {
-      p->data[i + p->number].x = xlist[i];
-      p->data[i + p->number].y = ylist[i];
-    }
-    p->number += num;
-  }
-}
-
-static void 
-_ListAddDouble (SciPlotList *p, int num, double *xlist, double *ylist)
-{
-  int i;
-
-  _ListReallocData(p, num);
-  if (p->data) {
-    for (i = 0; i < num; i++) {
-      p->data[i + p->number].x = xlist[i];
-      p->data[i + p->number].y = ylist[i];
-    }
-    p->number += num;
+  default:
+    cairo_set_dash(cr, NULL, 0, 0);
+    break;
   }
 }
 
 static void
-_ListSetReal(SciPlotList *p, int num, real *xlist, real *ylist)
+DrawTextAt(SciPlotWidget *w, cairo_t *cr, int fontnum,
+           const char *text, int length, double x, double y)
 {
-  if ((!p->data) || (p->allocated < num))
-    _ListAllocData(p, num);
-  p->number = 0;
-  _ListAddReal(p, num, xlist, ylist);
-}
-
-static void 
-_ListSetFloat (SciPlotList *p, int num, float *xlist, float *ylist)
-{
-  if ((!p->data) || (p->allocated < num))
-    _ListAllocData(p, num);
-  p->number = 0;
-  _ListAddFloat(p, num, xlist, ylist);
-}
-
-static void 
-_ListSetDouble (SciPlotList *p, int num, double *xlist, double *ylist)
-{
-  if ((!p->data) || (p->allocated < num))
-    _ListAllocData(p, num);
-  p->number = 0;
-  _ListAddDouble(p, num, xlist, ylist);
-}
-
-
-/*
- * Private SciPlot functions
- */
-
-
-/* 
- * The following vertical text drawing routine uses the "Fill Stippled" idea
- * found in xvertext-5.0, by Alan Richardson (mppa3@syma.sussex.ac.uk).
- * 
- * The following code is my interpretation of his idea, including some
- * hacked together excerpts from his source.  The credit for the clever bits
- * belongs to him.
- * 
- * To be complete, portions of the subroutine XDrawVString are
- * Copyright (c) 1993 Alan Richardson (mppa3@syma.sussex.ac.uk)
- */
-static void 
-XDrawVString (Display *display, Window win, GC gc, int x, int y, char *str, int len, XFontStruct *f)
-{
-  XImage *before, *after;
-  char *dest, *source;
-  int xloop, yloop, xdest, ydest;
-  Pixmap pix, rotpix;
-  int width, height;
-  GC drawGC;
-
-  width = (int) FontTextWidth(f, str);
-  height = (int) FontHeight(f);
-
-  pix = XCreatePixmap(display, win, width, height, 1);
-  rotpix = XCreatePixmap(display, win, height, width, 1);
-
-  drawGC = XCreateGC(display, pix, 0L, NULL);
-  XSetBackground(display, drawGC, 0);
-  XSetFont(display, drawGC, f->fid);
-  XSetForeground(display, drawGC, 0);
-  XFillRectangle(display, pix, drawGC, 0, 0, width, height);
-  XFillRectangle(display, rotpix, drawGC, 0, 0, height, width);
-  XSetForeground(display, drawGC, 1);
-
-  XDrawImageString(display, pix, drawGC, 0, (int) FontAscent(f),
-    str, strlen(str));
-
-  source = (char *) XtCalloc((((width + 7) / 8) * height), 1);
-  before = XCreateImage(display, DefaultVisual(display, DefaultScreen(display)),
-    1, XYPixmap, 0, source, width, height, 8, 0);
-  before->byte_order = before->bitmap_bit_order = MSBFirst;
-  XGetSubImage(display, pix, 0, 0, width, height, 1L, XYPixmap, before, 0, 0);
-  source = (char *) XtCalloc((((height + 7) / 8) * width), 1);
-  after = XCreateImage(display, DefaultVisual(display, DefaultScreen(display)),
-    1, XYPixmap, 0, source, height, width, 8, 0);
-  after->byte_order = after->bitmap_bit_order = MSBFirst;
-
-  for (yloop = 0; yloop < height; yloop++) {
-    for (xloop = 0; xloop < width; xloop++) {
-      source = before->data + (xloop / 8) +
-	(yloop * before->bytes_per_line);
-      if (*source & (128 >> (xloop % 8))) {
-	dest = after->data + (yloop / 8) +
-	  ((width - 1 - xloop) * after->bytes_per_line);
-	*dest |= (128 >> (yloop % 8));
-      }
-    }
-  }
-
-#ifdef DEBUG_SCIPLOT_VTEXT
-  if (1) {
-    char sourcebit;
-
-    for (yloop = 0; yloop < before->height; yloop++) {
-      for (xloop = 0; xloop < before->width; xloop++) {
-	source = before->data + (xloop / 8) +
-	  (yloop * before->bytes_per_line);
-	sourcebit = *source & (128 >> (xloop % 8));
-	if (sourcebit)
-	  putchar('X');
-	else
-	  putchar('.');
-      }
-      putchar('\n');
-    }
-
-    for (yloop = 0; yloop < after->height; yloop++) {
-      for (xloop = 0; xloop < after->width; xloop++) {
-	source = after->data + (xloop / 8) +
-	  (yloop * after->bytes_per_line);
-	sourcebit = *source & (128 >> (xloop % 8));
-	if (sourcebit)
-	  putchar('X');
-	else
-	  putchar('.');
-      }
-      putchar('\n');
-    }
-  }
-#endif
-
-  xdest = x - (int) FontAscent(f);
-  if (xdest < 0)
-    xdest = 0;
-  ydest = y - width;
-
-  XPutImage(display, rotpix, drawGC, after, 0, 0, 0, 0,
-    after->width, after->height);
-
-  XSetFillStyle(display, gc, FillStippled);
-  XSetStipple(display, gc, rotpix);
-  XSetTSOrigin(display, gc, xdest, ydest);
-  XFillRectangle(display, win, gc, xdest, ydest, after->width, after->height);
-  XSetFillStyle(display, gc, FillSolid);
-
-  XFreeGC(display, drawGC);
-  XDestroyImage(before);
-  XDestroyImage(after);
-  XFreePixmap(display, pix);
-  XFreePixmap(display, rotpix);
-
-/* Note that it appears that there is a memory leak here, but XDestroyImage
- * frees the image data that is XtCalloc'ed
- */
-
-}
-
-static char dots[] =
-{2, 1, 1};
-static char widedots[] =
-{2, 1, 4};
-
-static GC 
-ItemGetGC (SciPlotWidget w, SciPlotItem *item)
-{
-  GC gc;
-  short color;
-
-  switch (item->kind.any.style) {
-  case XtLINE_SOLID:
-    gc = w->plot.defaultGC;
-    break;
-  case XtLINE_DOTTED:
-    XSetDashes(XtDisplay(w), w->plot.dashGC, 0, &dots[1],
-      (int) dots[0]);
-    gc = w->plot.dashGC;
-    break;
-  case XtLINE_WIDEDOT:
-    XSetDashes(XtDisplay(w), w->plot.dashGC, 0, &widedots[1],
-      (int) widedots[0]);
-    gc = w->plot.dashGC;
-    break;
-  default:
-    return NULL;
-    break;
-  }
-  if (w->plot.Monochrome)
-    if (item->kind.any.color > 0)
-      color = w->plot.ForegroundColor;
-    else
-      color = w->plot.BackgroundColor;
-  else if (item->kind.any.color >= w->plot.num_colors)
-    color = w->plot.ForegroundColor;
-  else if (item->kind.any.color <= 0)
-    color = w->plot.BackgroundColor;
-  else
-    color = item->kind.any.color;
-  XSetForeground(XtDisplay(w), gc, w->plot.colors[color]);
-  return gc;
-}
-
-static GC 
-ItemGetFontGC (SciPlotWidget w, SciPlotItem *item)
-{
-  GC gc;
-  short color, fontnum;
-
-  gc = w->plot.dashGC;
-  if (w->plot.Monochrome)
-    if (item->kind.any.color > 0)
-      color = w->plot.ForegroundColor;
-    else
-      color = w->plot.BackgroundColor;
-  else if (item->kind.any.color >= w->plot.num_colors)
-    color = w->plot.ForegroundColor;
-  else if (item->kind.any.color <= 0)
-    color = w->plot.BackgroundColor;
-  else
-    color = item->kind.any.color;
-  XSetForeground(XtDisplay(w), gc, w->plot.colors[color]);
-  if (item->kind.text.font >= w->plot.num_fonts)
+  if (fontnum < 0 || fontnum >= w->num_fonts)
     fontnum = 0;
-  else
-    fontnum = item->kind.text.font;
-
-/*
- * fontnum==0 hack:  0 is supposed to be the default font, but the program
- * can't seem to get the default font ID from the GC for some reason.  So,
- * use a different GC where the default font still exists.
- */
-  XSetFont(XtDisplay(w), gc, w->plot.fonts[fontnum].font->fid);
-  return gc;
+  PangoLayout *layout = pango_cairo_create_layout(cr);
+  pango_layout_set_font_description(layout, w->fonts[fontnum].desc);
+  pango_layout_set_text(layout, text, length);
+  /* y is the X11-style baseline; convert to pango top-left */
+  int baseline = PANGO_PIXELS(pango_layout_get_baseline(layout));
+  cairo_move_to(cr, x, y - baseline);
+  pango_cairo_show_layout(cr, layout);
+  g_object_unref(layout);
 }
 
-static void 
-ItemDraw (SciPlotWidget w, SciPlotItem *item)
+static void
+DrawVTextAt(SciPlotWidget *w, cairo_t *cr, int fontnum,
+            const char *text, int length, double x, double y)
 {
-  XPoint point[8];
-  XSegment seg;
-  XRectangle rect;
-  int i;
-  GC gc;
+  /* Vertical text rotated 90 deg CCW.
+   * (x,y): x = screen-X of text baseline, y = screen-Y of text bottom.
+   * After translate(x,y) + rotate(-pi/2):
+   *   user +X maps screen-UP, user +Y maps screen-RIGHT.
+   * Place text at user (0, -ascent) so baseline lands at screen_x=x
+   * and text occupies screen_y in [y-textwidth, y].
+   */
+  if (fontnum < 0 || fontnum >= w->num_fonts)
+    fontnum = 0;
+  PangoLayout *layout = pango_cairo_create_layout(cr);
+  pango_layout_set_font_description(layout, w->fonts[fontnum].desc);
+  pango_layout_set_text(layout, text, length);
+  int baseline = PANGO_PIXELS(pango_layout_get_baseline(layout));
+  cairo_save(cr);
+  cairo_translate(cr, x, y);
+  cairo_rotate(cr, -G_PI / 2.0);
+  cairo_move_to(cr, 0.0, (double)-baseline);
+  pango_cairo_show_layout(cr, layout);
+  cairo_restore(cr);
+  g_object_unref(layout);
+}
 
-  if (!XtIsRealized((Widget) w))
+static void
+ItemDraw(SciPlotWidget *w, SciPlotItem *item, cairo_t *cr)
+{
+  if (!cr)
     return;
-  if ((item->type > SciPlotStartTextTypes) && (item->type < SciPlotEndTextTypes))
-    gc = ItemGetFontGC(w, item);
-  else
-    gc = ItemGetGC(w, item);
-  if (!gc)
-    return;
+
   switch (item->type) {
   case SciPlotLine:
-    seg.x1 = (short) item->kind.line.x1;
-    seg.y1 = (short) item->kind.line.y1;
-    seg.x2 = (short) item->kind.line.x2;
-    seg.y2 = (short) item->kind.line.y2;
-    XDrawSegments(XtDisplay(w), XtWindow(w), gc,
-      &seg, 1);
+    SetItemColor(w, item, cr);
+    SetItemLineStyle(item, cr);
+    cairo_set_line_width(cr, 1.0);
+    cairo_move_to(cr, item->kind.line.x1, item->kind.line.y1);
+    cairo_line_to(cr, item->kind.line.x2, item->kind.line.y2);
+    cairo_stroke(cr);
     break;
+
   case SciPlotRect:
-    XDrawRectangle(XtDisplay(w), XtWindow(w), gc,
-      (int) (item->kind.rect.x),
-      (int) (item->kind.rect.y),
-      (unsigned int) (item->kind.rect.w),
-      (unsigned int) (item->kind.rect.h));
+    SetItemColor(w, item, cr);
+    SetItemLineStyle(item, cr);
+    cairo_set_line_width(cr, 1.0);
+    cairo_rectangle(cr, item->kind.rect.x, item->kind.rect.y,
+                    item->kind.rect.w, item->kind.rect.h);
+    cairo_stroke(cr);
     break;
+
   case SciPlotFRect:
-    XFillRectangle(XtDisplay(w), XtWindow(w), gc,
-      (int) (item->kind.rect.x),
-      (int) (item->kind.rect.y),
-      (unsigned int) (item->kind.rect.w),
-      (unsigned int) (item->kind.rect.h));
-    XDrawRectangle(XtDisplay(w), XtWindow(w), gc,
-      (int) (item->kind.rect.x),
-      (int) (item->kind.rect.y),
-      (unsigned int) (item->kind.rect.w),
-      (unsigned int) (item->kind.rect.h));
+    SetItemColor(w, item, cr);
+    cairo_set_dash(cr, NULL, 0, 0);
+    cairo_rectangle(cr, item->kind.rect.x, item->kind.rect.y,
+                    item->kind.rect.w, item->kind.rect.h);
+    cairo_fill_preserve(cr);
+    cairo_set_line_width(cr, 1.0);
+    cairo_stroke(cr);
     break;
-  case SciPlotPoly:
-    i = 0;
-    while (i < item->kind.poly.count) {
-      point[i].x = (int) item->kind.poly.x[i];
-      point[i].y = (int) item->kind.poly.y[i];
-      i++;
-    }
-    point[i].x = (int) item->kind.poly.x[0];
-    point[i].y = (int) item->kind.poly.y[0];
-    XDrawLines(XtDisplay(w), XtWindow(w), gc,
-      point, i + 1, CoordModeOrigin);
+
+  case SciPlotPoly: {
+    int i = item->kind.poly.count;
+    if (i < 2) break;
+    SetItemColor(w, item, cr);
+    SetItemLineStyle(item, cr);
+    cairo_set_line_width(cr, 1.0);
+    cairo_move_to(cr, item->kind.poly.x[0], item->kind.poly.y[0]);
+    for (int j = 1; j < i; j++)
+      cairo_line_to(cr, item->kind.poly.x[j], item->kind.poly.y[j]);
+    cairo_close_path(cr);
+    cairo_stroke(cr);
     break;
-  case SciPlotFPoly:
-    i = 0;
-    while (i < item->kind.poly.count) {
-      point[i].x = (int) item->kind.poly.x[i];
-      point[i].y = (int) item->kind.poly.y[i];
-      i++;
-    }
-    point[i].x = (int) item->kind.poly.x[0];
-    point[i].y = (int) item->kind.poly.y[0];
-    XFillPolygon(XtDisplay(w), XtWindow(w), gc,
-      point, i + 1, Complex, CoordModeOrigin);
-    XDrawLines(XtDisplay(w), XtWindow(w), gc,
-      point, i + 1, CoordModeOrigin);
+  }
+
+  case SciPlotFPoly: {
+    int i = item->kind.poly.count;
+    if (i < 2) break;
+    SetItemColor(w, item, cr);
+    cairo_set_dash(cr, NULL, 0, 0);
+    cairo_move_to(cr, item->kind.poly.x[0], item->kind.poly.y[0]);
+    for (int j = 1; j < i; j++)
+      cairo_line_to(cr, item->kind.poly.x[j], item->kind.poly.y[j]);
+    cairo_close_path(cr);
+    cairo_fill_preserve(cr);
+    cairo_set_line_width(cr, 1.0);
+    cairo_stroke(cr);
     break;
+  }
+
   case SciPlotCircle:
-    XDrawArc(XtDisplay(w), XtWindow(w), gc,
-      (int) (item->kind.circ.x - item->kind.circ.r),
-      (int) (item->kind.circ.y - item->kind.circ.r),
-      (unsigned int) (item->kind.circ.r * 2),
-      (unsigned int) (item->kind.circ.r * 2),
-      0 * 64, 360 * 64);
+    SetItemColor(w, item, cr);
+    SetItemLineStyle(item, cr);
+    cairo_set_line_width(cr, 1.0);
+    cairo_arc(cr, item->kind.circ.x, item->kind.circ.y,
+              item->kind.circ.r, 0.0, 2.0 * G_PI);
+    cairo_stroke(cr);
     break;
+
   case SciPlotFCircle:
-    XFillArc(XtDisplay(w), XtWindow(w), gc,
-      (int) (item->kind.circ.x - item->kind.circ.r),
-      (int) (item->kind.circ.y - item->kind.circ.r),
-      (unsigned int) (item->kind.circ.r * 2),
-      (unsigned int) (item->kind.circ.r * 2),
-      0 * 64, 360 * 64);
+    SetItemColor(w, item, cr);
+    cairo_set_dash(cr, NULL, 0, 0);
+    cairo_arc(cr, item->kind.circ.x, item->kind.circ.y,
+              item->kind.circ.r, 0.0, 2.0 * G_PI);
+    cairo_fill_preserve(cr);
+    cairo_set_line_width(cr, 1.0);
+    cairo_stroke(cr);
     break;
+
   case SciPlotText:
-    XDrawString(XtDisplay(w), XtWindow(w), gc,
-      (int) (item->kind.text.x), (int) (item->kind.text.y),
-      item->kind.text.text,
-      (int) item->kind.text.length);
+    SetItemColor(w, item, cr);
+    DrawTextAt(w, cr, item->kind.text.font,
+               item->kind.text.text, item->kind.text.length,
+               item->kind.text.x, item->kind.text.y);
     break;
+
   case SciPlotVText:
-    XDrawVString(XtDisplay(w), XtWindow(w), gc,
-      (int) (item->kind.text.x), (int) (item->kind.text.y),
-      item->kind.text.text,
-      (int) item->kind.text.length,
-      FontFromFontnum(w, item->kind.text.font));
+    SetItemColor(w, item, cr);
+    DrawVTextAt(w, cr, item->kind.text.font,
+                item->kind.text.text, item->kind.text.length,
+                item->kind.text.x, item->kind.text.y);
     break;
+
   case SciPlotClipRegion:
-    rect.x = (short) item->kind.line.x1;
-    rect.y = (short) item->kind.line.y1;
-    rect.width = (short) item->kind.line.x2;
-    rect.height = (short) item->kind.line.y2;
-    XSetClipRectangles(XtDisplay(w), w->plot.dashGC, 0, 0, &rect, 1, Unsorted);
-    XSetClipRectangles(XtDisplay(w), w->plot.defaultGC, 0, 0, &rect, 1, Unsorted);
+    /* line.x1,y1 = origin; line.x2,y2 = size */
+    cairo_save(cr);
+    cairo_rectangle(cr, item->kind.line.x1, item->kind.line.y1,
+                    item->kind.line.x2, item->kind.line.y2);
+    cairo_clip(cr);
     break;
+
   case SciPlotClipClear:
-    XSetClipMask(XtDisplay(w), w->plot.dashGC, None);
-    XSetClipMask(XtDisplay(w), w->plot.defaultGC, None);
+    cairo_restore(cr);
     break;
+
   default:
     break;
   }
 }
 
-static void 
-ItemDrawAll (SciPlotWidget w)
+static void
+ItemDrawAll(SciPlotWidget *w, cairo_t *cr)
 {
-  SciPlotItem *item;
-  int i;
-
-  if (!XtIsRealized((Widget) w))
-    return;
-  item = w->plot.drawlist;
-  i = 0;
-  while (i < w->plot.num_drawlist) {
-    ItemDraw(w, item);
-    i++;
-    item++;
-  }
+  SciPlotItem *item = w->drawlist;
+  for (int i = 0; i < w->num_drawlist; i++, item++)
+    ItemDraw(w, item, cr);
 }
 
-
-
-/*
- * PostScript (r) functions ------------------------------------------------
- *
- */
-typedef struct {
-  char *command;
-  char *prolog;
-} PScommands;
-
-static PScommands psc[] =
-{
-  {"ma", "moveto"},
-  {"da", "lineto stroke newpath"},
-  {"la", "lineto"},
-  {"poly", "closepath stroke newpath"},
-  {"fpoly", "closepath fill newpath"},
-  {"box", "1 index 0 rlineto 0 exch rlineto neg 0 rlineto closepath stroke newpath"},
-  {"fbox", "1 index 0 rlineto 0 exch rlineto neg 0 rlineto closepath fill newpath"},
-  {"clipbox", "gsave 1 index 0 rlineto 0 exch rlineto neg 0 rlineto closepath clip newpath"},
-  {"unclip", "grestore newpath"},
-  {"cr", "0 360 arc stroke newpath"},
-  {"fcr", "0 360 arc fill newpath"},
-  {"vma", "gsave moveto 90 rotate"},
-  {"norm", "grestore"},
-  {"solid", "[] 0 setdash"},
-  {"dot", "[.25 2] 0 setdash"},
-  {"widedot", "[.25 8] 0 setdash"},
-  {"rgb", "setrgbcolor"},
-  {NULL, NULL}
-};
-
-enum PSenums {
-  PSmoveto, PSlineto,
-  PSpolyline, PSendpoly, PSendfill,
-  PSbox, PSfbox,
-  PSclipbox, PSunclip,
-  PScircle, PSfcircle,
-  PSvmoveto, PSnormal,
-  PSsolid, PSdot, PSwidedot,
-  PSrgb
-};
-
-static void 
-ItemPSDrawAll (SciPlotWidget w, FILE *fd, double yflip, Boolean usecolor)
-{
-  int i, loopcount;
-  SciPlotItem *item;
-  XcmsColor currentcolor;
-  int previousfont, previousline, currentfont, currentline, previouscolor;
-
-  item = w->plot.drawlist;
-  loopcount = 0;
-  previousfont = 0;
-  previouscolor = -1;
-  previousline = XtLINE_SOLID;
-  while (loopcount < w->plot.num_drawlist) {
-
-/* 2 switch blocks:  1st sets up defaults, 2nd actually draws things. */
-    currentline = previousline;
-    currentfont = previousfont;
-    switch (item->type) {
-    case SciPlotLine:
-    case SciPlotCircle:
-      currentline = item->kind.any.style;
-      break;
-    default:
-      break;
-    }
-    if (currentline != XtLINE_NONE) {
-      if (currentline != previousline) {
-	switch (item->kind.any.style) {
-	case XtLINE_SOLID:
-	  fprintf(fd, "%s ", psc[PSsolid].command);
-	  break;
-	case XtLINE_DOTTED:
-	  fprintf(fd, "%s ", psc[PSdot].command);
-	  break;
-	case XtLINE_WIDEDOT:
-	  fprintf(fd, "%s ", psc[PSwidedot].command);
-	  break;
-	}
-	previousline = currentline;
-      }
-
-      if (usecolor && item->kind.any.color != previouscolor) {
-        
-          /* Get Pixel index */
-        currentcolor.pixel = w->plot.colors[item->kind.any.color];
-          /* Get RGBi components [0.0,1.0] */
-        XcmsQueryColor( XtDisplay(w), w->plot.cmap, &currentcolor,
-          XcmsRGBiFormat );
-          /* output PostScript command */
-        fprintf(fd, "%f %f %f %s ", currentcolor.spec.RGBi.red,
-          currentcolor.spec.RGBi.green, currentcolor.spec.RGBi.blue,
-          psc[PSrgb].command);
-
-        previouscolor=item->kind.any.color;
-        
-      }
-
-      switch (item->type) {
-      case SciPlotLine:
-	fprintf(fd, "%.2f %.2f %s %.2f %.2f %s\n",
-	  item->kind.line.x1, yflip - item->kind.line.y1,
-	  psc[PSmoveto].command,
-	  item->kind.line.x2, yflip - item->kind.line.y2,
-	  psc[PSlineto].command);
-	break;
-      case SciPlotRect:
-	fprintf(fd, "%.2f %.2f %s %.2f %.2f %s\n",
-	  item->kind.rect.x,
-	  yflip - item->kind.rect.y - (item->kind.rect.h - 1.0),
-	  psc[PSmoveto].command,
-	  item->kind.rect.w - 1.0, item->kind.rect.h - 1.0,
-	  psc[PSbox].command);
-	break;
-      case SciPlotFRect:
-	fprintf(fd, "%.2f %.2f %s %.2f %.2f %s\n",
-	  item->kind.rect.x,
-	  yflip - item->kind.rect.y - (item->kind.rect.h - 1.0),
-	  psc[PSmoveto].command,
-	  item->kind.rect.w - 1.0, item->kind.rect.h - 1.0,
-	  psc[PSfbox].command);
-	break;
-      case SciPlotPoly:
-	fprintf(fd, "%.2f %.2f %s ",
-	  item->kind.poly.x[0], yflip - item->kind.poly.y[0],
-	  psc[PSmoveto].command);
-	for (i = 1; i < item->kind.poly.count; i++) {
-	  fprintf(fd, "%.2f %.2f %s ",
-	    item->kind.poly.x[i],
-	    yflip - item->kind.poly.y[i],
-	    psc[PSpolyline].command);
-	}
-	fprintf(fd, "%s\n", psc[PSendpoly].command);
-	break;
-      case SciPlotFPoly:
-	fprintf(fd, "%.2f %.2f %s ",
-	  item->kind.poly.x[0], yflip - item->kind.poly.y[0],
-	  psc[PSmoveto].command);
-	for (i = 1; i < item->kind.poly.count; i++) {
-	  fprintf(fd, "%.2f %.2f %s ",
-	    item->kind.poly.x[i],
-	    yflip - item->kind.poly.y[i],
-	    psc[PSpolyline].command);
-	}
-	fprintf(fd, "%s\n", psc[PSendfill].command);
-	break;
-      case SciPlotCircle:
-	fprintf(fd, "%.2f %.2f %.2f %s\n",
-	  item->kind.circ.x, yflip - item->kind.circ.y,
-	  item->kind.circ.r,
-	  psc[PScircle].command);
-	break;
-      case SciPlotFCircle:
-	fprintf(fd, "%.2f %.2f %.2f %s\n",
-	  item->kind.circ.x, yflip - item->kind.circ.y,
-	  item->kind.circ.r,
-	  psc[PSfcircle].command);
-	break;
-      case SciPlotText:
-	fprintf(fd, "font-%d %.2f %.2f %s (%s) show\n",
-	  item->kind.text.font,
-	  item->kind.text.x, yflip - item->kind.text.y,
-	  psc[PSmoveto].command,
-	  item->kind.text.text);
-	break;
-      case SciPlotVText:
-	fprintf(fd, "font-%d %.2f %.2f %s (%s) show %s\n",
-	  item->kind.text.font,
-	  item->kind.text.x, yflip - item->kind.text.y,
-	  psc[PSvmoveto].command,
-	  item->kind.text.text,
-	  psc[PSnormal].command);
-	break;
-      case SciPlotClipRegion:
-	fprintf(fd, "%.2f %.2f %s %.2f %.2f %s\n",
-	  item->kind.line.x1,
-	  yflip - item->kind.line.y1 - item->kind.line.y2,
-	  psc[PSmoveto].command,
-	  item->kind.line.x2, item->kind.line.y2,
-	  psc[PSclipbox].command);
-	break;
-      case SciPlotClipClear:
-	fprintf(fd, "%s\n", psc[PSunclip].command);
-	break;
-      default:
-	break;
-      }
-    }
-    loopcount++;
-    item++;
-  }
-}
-
-Boolean 
-SciPlotPSCreateFancy (SciPlotWidget w, char *filename, int drawborder, char *titles, Boolean usecolor)
-{
-  FILE *fd;
-  float scale, xoff, yoff, xmax, ymax, yflip, aspect, border, titlefontsize;
-  int i;
-  PScommands *p;
-  char fontname[128];
-
-  if (!(fd = fopen(filename, "w"))) {
-    XtWarning("SciPlotPSCreate: Unable to open postscript file.");
-    return False;
-  }
-  DrawAll(w);
-
-  aspect = (float) w->core.width / (float) w->core.height;
-  border = 36.0;
-  if (aspect > (612.0 / 792.0)) {
-    scale = (612.0 - (2 * border)) / (float) w->core.width;
-    xoff = border;
-    yoff = (792.0 - (2 * border) - scale * (float) w->core.height) / 2.0;
-    xmax = xoff + scale * (float) w->core.width;
-    ymax = yoff + scale * (float) w->core.height;
-  }
-  else {
-    scale = (792.0 - (2 * border)) / (float) w->core.height;
-    yoff = border;
-    xoff = (612.0 - (2 * border) - scale * (float) w->core.width) / 2.0;
-    xmax = xoff + scale * (float) w->core.width;
-    ymax = yoff + scale * (float) w->core.height;
-  }
-  yflip = w->core.height;
-  fprintf(fd, "%s\n%s %.2f  %s\n%s %f %f %f %f\n%s\n",
-    "%!PS-ADOBE-3.0 EPSF-3.0",
-    "%%Creator: SciPlot Widget",
-    _SCIPLOT_WIDGET_VERSION,
-    "Copyright (c) 1995 Robert W. McMullen",
-    "%%BoundingBox:", xoff, yoff, xmax, ymax,
-    "%%EndComments");
-
-  p = psc;
-  while (p->command) {
-    fprintf(fd, "/%s {%s} bind def\n", p->command, p->prolog);
-    p++;
-  }
-
-  for (i = 0; i < w->plot.num_fonts; i++) {
-    FontnumPostScriptString(w, i, fontname);
-    fprintf(fd, "/font-%d {%s setfont} bind def\n",
-      i, fontname);
-  }
-  titlefontsize = 10.0;
-  fprintf(fd, "/font-title {/%s findfont %f scalefont setfont} bind def\n",
-    "Times-Roman", titlefontsize);
-  fprintf(fd, "%f setlinewidth\n", 0.001);
-  fprintf(fd, "newpath gsave\n%f %f translate %f %f scale\n",
-    xoff, yoff, scale, scale);
-
-  ItemPSDrawAll(w, fd, yflip, usecolor);
-
-  fprintf(fd, "grestore\n");
-
-  if (drawborder) {
-    fprintf(fd, "%.2f %.2f %s %.2f %.2f %s\n",
-      border, border,
-      psc[PSmoveto].command,
-      612.0 - 2.0 * border, 792.0 - 2.0 * border,
-      psc[PSbox].command);
-  }
-  if (titles) {
-    char *ptr;
-    char buf[256];
-    int len, i, j;
-    float x, y;
-
-    x = border + titlefontsize;
-    y = 792.0 - border - (2.0 * titlefontsize);
-    len = strlen(titles);
-    ptr = titles;
-    i = 0;
-    while (i < len) {
-      j = 0;
-      while ((*ptr != '\n') && (i < len)) {
-	if ((*ptr == '(') || (*ptr == ')'))
-	  buf[j++] = '\\';
-	buf[j++] = *ptr;
-	ptr++;
-	i++;
-      }
-      buf[j] = '\0';
-      ptr++;
-      i++;
-      fprintf(fd, "font-title %.2f %.2f %s (%s) show\n",
-	x, y, psc[PSmoveto].command, buf);
-      y -= titlefontsize * 1.5;
-    }
-    if (border) {
-      y += titlefontsize * 0.5;
-      fprintf(fd, "%.2f %.2f %s %.2f %.2f %s\n",
-	border, y,
-	psc[PSmoveto].command,
-	612.0 - border, y,
-	psc[PSlineto].command);
-    }
-  }
-
-  fprintf(fd, "showpage\n");
-  fclose(fd);
-  return True;
-}
-
-Boolean 
-SciPlotPSCreate (Widget wi, char *filename)
-{
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi)) {
-    XtWarning("SciPlotPSCreate: Not a SciPlot widget.");
-    return False;
-  }
-
-  w = (SciPlotWidget) wi;
-  return SciPlotPSCreateFancy(w, filename, False, NULL, False);
-}
-
-Boolean 
-SciPlotPSCreateColor (Widget wi, char *filename)
-{
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi)) {
-    XtWarning("SciPlotPSCreate: Not a SciPlot widget.");
-    return False;
-  }
-
-  w = (SciPlotWidget) wi;
-  return SciPlotPSCreateFancy(w, filename, False, NULL, True);
-}
-
-
-/*
- * Private device independent drawing functions
+/* ==========================================================================
+ * PostScript output via Cairo PS surface
  */
 
-static void 
-EraseClassItems (SciPlotWidget w, SciPlotDrawingEnum drawing)
+static gboolean
+SciPlotPSInternal(GtkWidget *wi, const char *filename)
 {
-  SciPlotItem *item;
-  int i;
+  SciPlotWidget *w;
+  cairo_surface_t *surface;
+  cairo_t *cr;
+  int width, height;
 
-  if (!XtIsRealized((Widget) w))
-    return;
-  item = w->plot.drawlist;
-  i = 0;
-  while (i < w->plot.num_drawlist) {
-    if (item->drawing_class == drawing) {
-      item->kind.any.color = 0;
-      item->kind.any.style = XtLINE_SOLID;
-      ItemDraw(w, item);
-    }
-    i++;
-    item++;
+  if (!SCIPLOT_IS_WIDGET(wi)) {
+    g_warning("SciPlotPSCreate: not a SciPlot widget.");
+    return FALSE;
   }
+  w = SCIPLOT_WIDGET(wi);
+  if (!gtk_widget_get_realized(wi)) {
+    g_warning("SciPlotPSCreate: widget not realized.");
+    return FALSE;
+  }
+  width  = gtk_widget_get_width(wi);
+  height = gtk_widget_get_height(wi);
+  if (width <= 0 || height <= 0)
+    return FALSE;
+
+  if (w->num_drawlist == 0) {
+    ComputeAll(w);
+    DrawAll(w);
+  }
+
+  surface = cairo_ps_surface_create(filename, (double)width, (double)height);
+  if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
+    g_warning("SciPlotPSCreate: cannot create PS file %s", filename);
+    cairo_surface_destroy(surface);
+    return FALSE;
+  }
+  cr = cairo_create(surface);
+  cairo_set_source_rgb(cr, 1, 1, 1);
+  cairo_paint(cr);
+  ItemDrawAll(w, cr);
+  cairo_show_page(cr);
+  cairo_destroy(cr);
+  cairo_surface_destroy(surface);
+  return TRUE;
 }
 
-static void 
-EraseAllItems (SciPlotWidget w)
+gboolean
+SciPlotPSCreate(GtkWidget *wi, const char *filename)
 {
-  SciPlotItem *item;
-  int i;
-
-  item = w->plot.drawlist;
-  i = 0;
-  while (i < w->plot.num_drawlist) {
-    if ((item->type > SciPlotStartTextTypes) &&
-      (item->type < SciPlotEndTextTypes))
-      XtFree(item->kind.text.text);
-    i++;
-    item++;
-  }
-  w->plot.num_drawlist = 0;
+  return SciPlotPSInternal(wi, filename);
 }
 
-static void 
-EraseAll (SciPlotWidget w)
+gboolean
+SciPlotPSCreateColor(GtkWidget *wi, const char *filename)
+{
+  return SciPlotPSInternal(wi, filename);
+}
+
+/* ==========================================================================
+ * Erase utilities
+ */
+
+static void
+EraseAllItems(SciPlotWidget *w)
+{
+  SciPlotItem *item = w->drawlist;
+  for (int i = 0; i < w->num_drawlist; i++, item++) {
+    if (item->type > SciPlotStartTextTypes &&
+        item->type < SciPlotEndTextTypes)
+      g_free(item->kind.text.text);
+  }
+  w->num_drawlist = 0;
+}
+
+static void
+EraseAll(SciPlotWidget *w)
 {
   EraseAllItems(w);
-  if (XtIsRealized((Widget) w))
-    XClearWindow(XtDisplay(w), XtWindow(w));
 }
 
-static SciPlotItem *
-ItemGetNew (SciPlotWidget w)
-{
-  SciPlotItem *item;
+/* ==========================================================================
+ * Display-list item allocation
+ */
 
-  w->plot.num_drawlist++;
-  if (w->plot.num_drawlist >= w->plot.alloc_drawlist) {
-    w->plot.alloc_drawlist += NUMPLOTITEMEXTRA;
-    w->plot.drawlist = (SciPlotItem *) XtRealloc((char *) w->plot.drawlist,
-      w->plot.alloc_drawlist * sizeof(SciPlotItem));
-    if (!w->plot.drawlist) {
-      printf("Can't realloc memory for SciPlotItem list\n");
+static SciPlotItem *
+ItemGetNew(SciPlotWidget *w)
+{
+  w->num_drawlist++;
+  if (w->num_drawlist >= w->alloc_drawlist) {
+    w->alloc_drawlist += NUMPLOTITEMEXTRA;
+    w->drawlist = g_realloc(w->drawlist,
+                            w->alloc_drawlist * sizeof(SciPlotItem));
+    if (!w->drawlist) {
+      fprintf(stderr, "Can't realloc memory for SciPlotItem list\n");
       exit(1);
     }
-#ifdef DEBUG_SCIPLOT
-    printf("Alloced #%d for drawlist\n", w->plot.alloc_drawlist);
-#endif
   }
-  item = w->plot.drawlist + (w->plot.num_drawlist - 1);
-  item->type = SciPlotFALSE;
-  item->drawing_class = w->plot.current_id;
+  SciPlotItem *item = w->drawlist + (w->num_drawlist - 1);
+  item->type          = SciPlotFALSE;
+  item->drawing_class = w->current_id;
   return item;
 }
 
+/* ==========================================================================
+ * Primitive setters (add to display list only, no immediate draw)
+ */
 
 static void
-LineSet(SciPlotWidget w, real x1, real y1, real x2, real y2,
-  int color, int style)
+LineSet(SciPlotWidget *w, real x1, real y1, real x2, real y2,
+        int color, int style)
 {
-  SciPlotItem *item;
-
-  item = ItemGetNew(w);
-  item->kind.any.color = (short) color;
-  item->kind.any.style = (short) style;
-  item->kind.line.x1 = (real) x1;
-  item->kind.line.y1 = (real) y1;
-  item->kind.line.x2 = (real) x2;
-  item->kind.line.y2 = (real) y2;
-  item->type = SciPlotLine;
-  ItemDraw(w, item);
+  SciPlotItem *item = ItemGetNew(w);
+  item->kind.any.color = (short)color;
+  item->kind.any.style = (short)style;
+  item->kind.line.x1   = x1; item->kind.line.y1 = y1;
+  item->kind.line.x2   = x2; item->kind.line.y2 = y2;
+  item->type           = SciPlotLine;
 }
 
 static void
-RectSet(SciPlotWidget w, real x1, real y1, real x2, real y2,
-  int color, int style)
+RectSet(SciPlotWidget *w, real x1, real y1, real x2, real y2,
+        int color, int style)
 {
-  SciPlotItem *item;
   real x, y, width, height;
-
-  if (x1 < x2)
-    x = x1, width = (x2 - x1 + 1);
-  else
-    x = x2, width = (x1 - x2 + 1);
-  if (y1 < y2)
-    y = y1, height = (y2 - y1 + 1);
-  else
-    y = y2, height = (y1 - y2 + 1);
-
-  item = ItemGetNew(w);
-  item->kind.any.color = (short) color;
-  item->kind.any.style = (short) style;
-  item->kind.rect.x = (real) x;
-  item->kind.rect.y = (real) y;
-  item->kind.rect.w = (real) width;
-  item->kind.rect.h = (real) height;
+  if (x1 < x2) x = x1, width  = x2 - x1 + 1;
+  else          x = x2, width  = x1 - x2 + 1;
+  if (y1 < y2) y = y1, height = y2 - y1 + 1;
+  else          y = y2, height = y1 - y2 + 1;
+  SciPlotItem *item = ItemGetNew(w);
+  item->kind.any.color = (short)color; item->kind.any.style = (short)style;
+  item->kind.rect.x = x; item->kind.rect.y = y;
+  item->kind.rect.w = width; item->kind.rect.h = height;
   item->type = SciPlotRect;
-  ItemDraw(w, item);
 }
 
-static void 
-FilledRectSet (SciPlotWidget w, real x1, real y1, real x2, real y2, int color, int style)
+static void
+FilledRectSet(SciPlotWidget *w, real x1, real y1, real x2, real y2,
+              int color, int style)
 {
-  SciPlotItem *item;
   real x, y, width, height;
-
-  if (x1 < x2)
-    x = x1, width = (x2 - x1 + 1);
-  else
-    x = x2, width = (x1 - x2 + 1);
-  if (y1 < y2)
-    y = y1, height = (y2 - y1 + 1);
-  else
-    y = y2, height = (y1 - y2 + 1);
-
-  item = ItemGetNew(w);
-  item->kind.any.color = (short) color;
-  item->kind.any.style = (short) style;
-  item->kind.rect.x = (real) x;
-  item->kind.rect.y = (real) y;
-  item->kind.rect.w = (real) width;
-  item->kind.rect.h = (real) height;
+  if (x1 < x2) x = x1, width  = x2 - x1 + 1;
+  else          x = x2, width  = x1 - x2 + 1;
+  if (y1 < y2) y = y1, height = y2 - y1 + 1;
+  else          y = y2, height = y1 - y2 + 1;
+  SciPlotItem *item = ItemGetNew(w);
+  item->kind.any.color = (short)color; item->kind.any.style = (short)style;
+  item->kind.rect.x = x; item->kind.rect.y = y;
+  item->kind.rect.w = width; item->kind.rect.h = height;
   item->type = SciPlotFRect;
-  ItemDraw(w, item);
 }
 
-static void 
-TriSet (SciPlotWidget w, real x1, real y1, real x2, real y2, real x3, real y3, int color, int style)
+static void
+TriSet(SciPlotWidget *w, real x1, real y1, real x2, real y2, real x3, real y3,
+       int color, int style)
 {
-  SciPlotItem *item;
-
-  item = ItemGetNew(w);
-  item->kind.any.color = (short) color;
-  item->kind.any.style = (short) style;
-  item->kind.poly.count = 3;
-  item->kind.poly.x[0] = (real) x1;
-  item->kind.poly.y[0] = (real) y1;
-  item->kind.poly.x[1] = (real) x2;
-  item->kind.poly.y[1] = (real) y2;
-  item->kind.poly.x[2] = (real) x3;
-  item->kind.poly.y[2] = (real) y3;
-  item->type = SciPlotPoly;
-  ItemDraw(w, item);
+  SciPlotItem *item = ItemGetNew(w);
+  item->kind.any.color   = (short)color; item->kind.any.style = (short)style;
+  item->kind.poly.count  = 3;
+  item->kind.poly.x[0]   = x1; item->kind.poly.y[0] = y1;
+  item->kind.poly.x[1]   = x2; item->kind.poly.y[1] = y2;
+  item->kind.poly.x[2]   = x3; item->kind.poly.y[2] = y3;
+  item->type             = SciPlotPoly;
 }
 
-static void 
-FilledTriSet (SciPlotWidget w, real x1, real y1, real x2, real y2, real x3, real y3, int color, int style)
+static void
+FilledTriSet(SciPlotWidget *w, real x1, real y1, real x2, real y2, real x3, real y3,
+             int color, int style)
 {
-  SciPlotItem *item;
-
-  item = ItemGetNew(w);
-  item->kind.any.color = (short) color;
-  item->kind.any.style = (short) style;
-  item->kind.poly.count = 3;
-  item->kind.poly.x[0] = (real) x1;
-  item->kind.poly.y[0] = (real) y1;
-  item->kind.poly.x[1] = (real) x2;
-  item->kind.poly.y[1] = (real) y2;
-  item->kind.poly.x[2] = (real) x3;
-  item->kind.poly.y[2] = (real) y3;
-  item->type = SciPlotFPoly;
-  ItemDraw(w, item);
+  SciPlotItem *item = ItemGetNew(w);
+  item->kind.any.color   = (short)color; item->kind.any.style = (short)style;
+  item->kind.poly.count  = 3;
+  item->kind.poly.x[0]   = x1; item->kind.poly.y[0] = y1;
+  item->kind.poly.x[1]   = x2; item->kind.poly.y[1] = y2;
+  item->kind.poly.x[2]   = x3; item->kind.poly.y[2] = y3;
+  item->type             = SciPlotFPoly;
 }
 
-static void 
-QuadSet (SciPlotWidget w, real x1, real y1, real x2, real y2, real x3, real y3, real x4, real y4, int color, int style)
+static void
+QuadSet(SciPlotWidget *w,
+        real x1, real y1, real x2, real y2,
+        real x3, real y3, real x4, real y4,
+        int color, int style)
 {
-  SciPlotItem *item;
-
-  item = ItemGetNew(w);
-  item->kind.any.color = (short) color;
-  item->kind.any.style = (short) style;
-  item->kind.poly.count = 4;
-  item->kind.poly.x[0] = (real) x1;
-  item->kind.poly.y[0] = (real) y1;
-  item->kind.poly.x[1] = (real) x2;
-  item->kind.poly.y[1] = (real) y2;
-  item->kind.poly.x[2] = (real) x3;
-  item->kind.poly.y[2] = (real) y3;
-  item->kind.poly.x[3] = (real) x4;
-  item->kind.poly.y[3] = (real) y4;
-  item->type = SciPlotPoly;
-  ItemDraw(w, item);
+  SciPlotItem *item = ItemGetNew(w);
+  item->kind.any.color   = (short)color; item->kind.any.style = (short)style;
+  item->kind.poly.count  = 4;
+  item->kind.poly.x[0]   = x1; item->kind.poly.y[0] = y1;
+  item->kind.poly.x[1]   = x2; item->kind.poly.y[1] = y2;
+  item->kind.poly.x[2]   = x3; item->kind.poly.y[2] = y3;
+  item->kind.poly.x[3]   = x4; item->kind.poly.y[3] = y4;
+  item->type             = SciPlotPoly;
 }
 
-static void 
-FilledQuadSet (SciPlotWidget w, real x1, real y1, real x2, real y2, real x3, real y3, real x4, real y4, int color, int style)
+static void
+FilledQuadSet(SciPlotWidget *w,
+              real x1, real y1, real x2, real y2,
+              real x3, real y3, real x4, real y4,
+              int color, int style)
 {
-  SciPlotItem *item;
-
-  item = ItemGetNew(w);
-  item->kind.any.color = (short) color;
-  item->kind.any.style = (short) style;
-  item->kind.poly.count = 4;
-  item->kind.poly.x[0] = (real) x1;
-  item->kind.poly.y[0] = (real) y1;
-  item->kind.poly.x[1] = (real) x2;
-  item->kind.poly.y[1] = (real) y2;
-  item->kind.poly.x[2] = (real) x3;
-  item->kind.poly.y[2] = (real) y3;
-  item->kind.poly.x[3] = (real) x4;
-  item->kind.poly.y[3] = (real) y4;
-  item->type = SciPlotFPoly;
-  ItemDraw(w, item);
+  SciPlotItem *item = ItemGetNew(w);
+  item->kind.any.color   = (short)color; item->kind.any.style = (short)style;
+  item->kind.poly.count  = 4;
+  item->kind.poly.x[0]   = x1; item->kind.poly.y[0] = y1;
+  item->kind.poly.x[1]   = x2; item->kind.poly.y[1] = y2;
+  item->kind.poly.x[2]   = x3; item->kind.poly.y[2] = y3;
+  item->kind.poly.x[3]   = x4; item->kind.poly.y[3] = y4;
+  item->type             = SciPlotFPoly;
 }
 
-static void 
-CircleSet (SciPlotWidget w, real x, real y, real r, int color, int style)
+static void
+CircleSet(SciPlotWidget *w, real x, real y, real r, int color, int style)
 {
-  SciPlotItem *item;
-
-  item = ItemGetNew(w);
-  item->kind.any.color = (short) color;
-  item->kind.any.style = (short) style;
-  item->kind.circ.x = (real) x;
-  item->kind.circ.y = (real) y;
-  item->kind.circ.r = (real) r;
+  SciPlotItem *item = ItemGetNew(w);
+  item->kind.any.color = (short)color; item->kind.any.style = (short)style;
+  item->kind.circ.x = x; item->kind.circ.y = y; item->kind.circ.r = r;
   item->type = SciPlotCircle;
-  ItemDraw(w, item);
 }
 
-static void 
-FilledCircleSet (SciPlotWidget w, real x, real y, real r, int color, int style)
+static void
+FilledCircleSet(SciPlotWidget *w, real x, real y, real r, int color, int style)
 {
-  SciPlotItem *item;
-
-  item = ItemGetNew(w);
-  item->kind.any.color = (short) color;
-  item->kind.any.style = (short) style;
-  item->kind.circ.x = (real) x;
-  item->kind.circ.y = (real) y;
-  item->kind.circ.r = (real) r;
+  SciPlotItem *item = ItemGetNew(w);
+  item->kind.any.color = (short)color; item->kind.any.style = (short)style;
+  item->kind.circ.x = x; item->kind.circ.y = y; item->kind.circ.r = r;
   item->type = SciPlotFCircle;
-  ItemDraw(w, item);
 }
 
-static void 
-TextSet (SciPlotWidget w, real x, real y, char *text, int color, int font)
+static void
+TextSet(SciPlotWidget *w, real x, real y, const char *text, int color, int font)
 {
-  SciPlotItem *item;
-
-  item = ItemGetNew(w);
-  item->kind.any.color = (short) color;
-  item->kind.any.style = 0;
-  item->kind.text.x = (real) x;
-  item->kind.text.y = (real) y;
-  item->kind.text.length = strlen(text);
-  item->kind.text.text = XtMalloc((int) item->kind.text.length + 1);
-  item->kind.text.font = font;
-  strcpy(item->kind.text.text, text);
-  item->type = SciPlotText;
-  ItemDraw(w, item);
-#ifdef DEBUG_SCIPLOT_TEXT
-  if (1) {
-    real x1, y1;
-
-    y -= FontnumAscent(w, font);
-    y1 = y + FontnumHeight(w, font) - 1.0;
-    x1 = x + FontnumTextWidth(w, font, text) - 1.0;
-    RectSet(w, x, y, x1, y1, color, XtLINE_SOLID);
-  }
-#endif
+  SciPlotItem *item = ItemGetNew(w);
+  item->kind.any.color   = (short)color;
+  item->kind.any.style   = 0;
+  item->kind.text.x      = x;
+  item->kind.text.y      = y;
+  item->kind.text.length = (short)strlen(text);
+  item->kind.text.text   = g_strdup(text);
+  item->kind.text.font   = (short)font;
+  item->type             = SciPlotText;
 }
 
-static void 
-TextCenter (SciPlotWidget w, real x, real y, char *text, int color, int font)
+static void
+TextCenter(SciPlotWidget *w, real x, real y, const char *text, int color, int font)
 {
   x -= FontnumTextWidth(w, font, text) / 2.0;
   y += FontnumHeight(w, font) / 2.0 - FontnumDescent(w, font);
   TextSet(w, x, y, text, color, font);
 }
 
-static void 
-VTextSet (SciPlotWidget w, real x, real y, char *text, int color, int font)
+static void
+VTextSet(SciPlotWidget *w, real x, real y, const char *text, int color, int font)
 {
-  SciPlotItem *item;
-
-  item = ItemGetNew(w);
-  item->kind.any.color = (short) color;
-  item->kind.any.style = 0;
-  item->kind.text.x = (real) x;
-  item->kind.text.y = (real) y;
-  item->kind.text.length = strlen(text);
-  item->kind.text.text = XtMalloc((int) item->kind.text.length + 1);
-  item->kind.text.font = font;
-  strcpy(item->kind.text.text, text);
-  item->type = SciPlotVText;
-  ItemDraw(w, item);
-#ifdef DEBUG_SCIPLOT_TEXT
-  if (1) {
-    real x1, y1;
-
-    x += FontnumDescent(w, font);
-    x1 = x - FontnumHeight(w, font) - 1.0;
-    y1 = y - FontnumTextWidth(w, font, text) - 1.0;
-    RectSet(w, x, y, x1, y1, color, XtLINE_SOLID);
-  }
-#endif
+  SciPlotItem *item = ItemGetNew(w);
+  item->kind.any.color   = (short)color;
+  item->kind.any.style   = 0;
+  item->kind.text.x      = x;
+  item->kind.text.y      = y;
+  item->kind.text.length = (short)strlen(text);
+  item->kind.text.text   = g_strdup(text);
+  item->kind.text.font   = (short)font;
+  item->type             = SciPlotVText;
 }
 
-static void 
-VTextCenter (SciPlotWidget w, real x, real y, char *text, int color, int font)
+static void
+VTextCenter(SciPlotWidget *w, real x, real y, const char *text, int color, int font)
 {
   x += FontnumHeight(w, font) / 2.0 - FontnumDescent(w, font);
   y += FontnumTextWidth(w, font, text) / 2.0;
   VTextSet(w, x, y, text, color, font);
 }
 
-static void 
-ClipSet (SciPlotWidget w)
+static void
+ClipSet(SciPlotWidget *w)
 {
-  SciPlotItem *item;
-
-  if (w->plot.ChartType == XtCARTESIAN) {
-    item = ItemGetNew(w);
+  if (w->ChartType == XtCARTESIAN) {
+    SciPlotItem *item = ItemGetNew(w);
     item->kind.any.style = XtLINE_SOLID;
     item->kind.any.color = 1;
-    item->kind.line.x1 = w->plot.x.Origin;
-    item->kind.line.x2 = w->plot.x.Size;
-    item->kind.line.y1 = w->plot.y.Origin;
-    item->kind.line.y2 = w->plot.y.Size;
-#ifdef DEBUG_SCIPLOT
-    printf("clipping region: x=%f y=%f w=%f h=%f\n",
-      item->kind.line.x1,
-      item->kind.line.y1,
-      item->kind.line.x2,
-      item->kind.line.y2
-      );
-#endif
-    item->type = SciPlotClipRegion;
-    ItemDraw(w, item);
+    item->kind.line.x1   = w->x.Origin;
+    item->kind.line.x2   = w->x.Size;
+    item->kind.line.y1   = w->y.Origin;
+    item->kind.line.y2   = w->y.Size;
+    item->type           = SciPlotClipRegion;
   }
 }
 
-static void 
-ClipClear (SciPlotWidget w)
+static void
+ClipClear(SciPlotWidget *w)
 {
-  SciPlotItem *item;
-
-  if (w->plot.ChartType == XtCARTESIAN) {
-    item = ItemGetNew(w);
+  if (w->ChartType == XtCARTESIAN) {
+    SciPlotItem *item = ItemGetNew(w);
     item->kind.any.style = XtLINE_SOLID;
     item->kind.any.color = 1;
-    item->type = SciPlotClipClear;
-    ItemDraw(w, item);
+    item->type           = SciPlotClipClear;
   }
 }
 
-
-/*
- * Private data point to screen location converters
+/* ==========================================================================
+ * Data coordinate to screen coordinate converters
  */
 
-static real 
-PlotX (SciPlotWidget w, real xin)
+static real
+PlotX(SciPlotWidget *w, real xin)
 {
-  real xout;
-
-  if (w->plot.XLog)
-    xout = w->plot.x.Origin +
-      ((log10(xin) - log10(w->plot.x.DrawOrigin)) *
-      (w->plot.x.Size / w->plot.x.DrawSize));
+  if (w->XLog)
+    return w->x.Origin +
+      ((log10(xin) - log10(w->x.DrawOrigin)) *
+       (w->x.Size / w->x.DrawSize));
   else
-    xout = w->plot.x.Origin +
-      ((xin - w->plot.x.DrawOrigin) *
-      (w->plot.x.Size / w->plot.x.DrawSize));
-  return xout;
+    return w->x.Origin +
+      ((xin - w->x.DrawOrigin) * (w->x.Size / w->x.DrawSize));
 }
 
-static real 
-PlotY (SciPlotWidget w, real yin)
+static real
+PlotY(SciPlotWidget *w, real yin)
 {
-  real yout;
-
-  if (w->plot.YLog)
-    yout = w->plot.y.Origin + w->plot.y.Size -
-      ((log10(yin) - log10(w->plot.y.DrawOrigin)) *
-      (w->plot.y.Size / w->plot.y.DrawSize));
+  if (w->YLog)
+    return w->y.Origin + w->y.Size -
+      ((log10(yin) - log10(w->y.DrawOrigin)) *
+       (w->y.Size / w->y.DrawSize));
   else
-    yout = w->plot.y.Origin + w->plot.y.Size -
-      ((yin - w->plot.y.DrawOrigin) *
-      (w->plot.y.Size / w->plot.y.DrawSize));
-  return yout;
+    return w->y.Origin + w->y.Size -
+      ((yin - w->y.DrawOrigin) * (w->y.Size / w->y.DrawSize));
 }
 
-static void 
-PlotRTRadians (SciPlotWidget w, real r, real t, real *xout, real *yout)
+static void
+PlotRTRadians(SciPlotWidget *w, real r, real t, real *xout, real *yout)
 {
-  *xout = w->plot.x.Center + (r * (real) cos(t) /
-    w->plot.PolarScale * w->plot.x.Size / 2.0);
-  *yout = w->plot.y.Center + (-r * (real) sin(t) /
-    w->plot.PolarScale * w->plot.x.Size / 2.0);
+  *xout = w->x.Center + (r * (real)cos(t) / w->PolarScale * w->x.Size / 2.0);
+  *yout = w->y.Center + (-r * (real)sin(t) / w->PolarScale * w->x.Size / 2.0);
 }
 
-static void 
-PlotRTDegrees (SciPlotWidget w, real r, real t, real *xout, real *yout)
+static void
+PlotRTDegrees(SciPlotWidget *w, real r, real t, real *xout, real *yout)
 {
-  t *= DEG2RAD;
+  PlotRTRadians(w, r, t * DEG2RAD, xout, yout);
+}
+
+static void
+PlotRT(SciPlotWidget *w, real r, real t, real *xout, real *yout)
+{
+  if (w->Degrees) t *= DEG2RAD;
   PlotRTRadians(w, r, t, xout, yout);
 }
 
-static void 
-PlotRT (SciPlotWidget w, real r, real t, real *xout, real *yout)
-{
-  if (w->plot.Degrees)
-    t *= DEG2RAD;
-  PlotRTRadians(w, r, t, xout, yout);
-}
-
-
-/*
- * Private calculation utilities for axes
+/* ==========================================================================
+ * Axis calculation utilities
  */
 
-#define NUMBER_MINOR	8
-#define MAX_MAJOR	8
-static float CAdeltas[8] =
-{0.1, 0.2, 0.25, 0.5, 1.0, 2.0, 2.5, 5.0};
-static int CAdecimals[8] =
-{0, 0, 1, 0, 0, 0, 1, 0};
-static int CAminors[8] =
-{4, 4, 4, 5, 4, 4, 4, 5};
+#define NUMBER_MINOR 8
+#define MAX_MAJOR    8
+static float CAdeltas[8]   = {0.1, 0.2, 0.25, 0.5, 1.0, 2.0, 2.5, 5.0};
+static int   CAdecimals[8] = {0, 0, 1, 0, 0, 0, 1, 0};
+static int   CAminors[8]   = {4, 4, 4, 5, 4, 4, 4, 5};
 
-static void 
-ComputeAxis (SciPlotAxis *axis, real min, real max, Boolean log)
+static void
+ComputeAxis(SciPlotAxis *axis, real min, real max, gboolean log)
 {
   real range, rnorm, delta, calcmin, calcmax;
   int nexp, majornum, minornum, majordecimals, decimals, i;
 
   range = max - min;
   if (log) {
-    if (range==0.0) {
-      calcmin = powi(10.0, (int) floor(log10(min)));
-      calcmax = 10.0*calcmin;
+    if (range == 0.0) {
+      calcmin = powi(10.0, (int)floor(log10(min)));
+      calcmax = 10.0 * calcmin;
+    } else {
+      calcmin = powi(10.0, (int)floor(log10(min)));
+      calcmax = powi(10.0, (int)ceil(log10(max)));
     }
-    else {
-      calcmin = powi(10.0, (int) floor(log10(min)));
-      calcmax = powi(10.0, (int) ceil(log10(max)));
-    }
-    
-/*     printf("calcmin=%e min=%e   calcmax=%e max=%e\n",calcmin,min, */
-/*       calcmax,max); */
-    
     delta = 10.0;
-
     axis->DrawOrigin = calcmin;
-    axis->DrawMax = calcmax;
-    axis->DrawSize = log10(calcmax) - log10(calcmin);
-    axis->MajorInc = delta;
-    axis->MajorNum = (int) (log10(calcmax) - log10(calcmin)) + 1;
-    axis->MinorNum = 10;
-    axis->Precision = -(int) (log10(calcmin) * 1.0001);
-#ifdef DEBUG_SCIPLOT
-    printf("calcmin=%e log=%e (int)log=%d  Precision=%d\n",
-      calcmin, log10(calcmin), (int) (log10(calcmin) * 1.0001), axis->Precision);
-#endif
-    if (axis->Precision < 0)
-      axis->Precision = 0;
-  }
-  else {
-    if (range==0.0) nexp=0;
-    else nexp = (int) floor(log10(range));
+    axis->DrawMax    = calcmax;
+    axis->DrawSize   = log10(calcmax) - log10(calcmin);
+    axis->MajorInc   = delta;
+    axis->MajorNum   = (int)(log10(calcmax) - log10(calcmin)) + 1;
+    axis->MinorNum   = 10;
+    axis->Precision  = -(int)(log10(calcmin) * 1.0001);
+    if (axis->Precision < 0) axis->Precision = 0;
+  } else {
+    if (range == 0.0) nexp = 0;
+    else              nexp = (int)floor(log10(range));
     rnorm = range / powi(10.0, nexp);
     for (i = 0; i < NUMBER_MINOR; i++) {
-      delta = CAdeltas[i];
-      minornum = CAminors[i];
-      majornum = (int) ((rnorm + 0.9999 * delta) / delta);
+      delta         = CAdeltas[i];
+      minornum      = CAminors[i];
+      majornum      = (int)((rnorm + 0.9999 * delta) / delta);
       majordecimals = CAdecimals[i];
-      if (majornum <= MAX_MAJOR)
-	break;
+      if (majornum <= MAX_MAJOR) break;
     }
     delta *= powi(10.0, nexp);
-#ifdef DEBUG_SCIPLOT
-    printf("nexp=%d range=%f rnorm=%f delta=%f\n", nexp, range, rnorm, delta);
-#endif
 
     if (min < 0.0)
-      calcmin = ((float) ((int) ((min - .9999 * delta) / delta))) * delta;
+      calcmin = ((float)((int)((min - .9999 * delta) / delta))) * delta;
     else if ((min > 0.0) && (min < 1.0))
-      calcmin = ((float) ((int) ((1.0001 * min) / delta))) * delta;
+      calcmin = ((float)((int)((1.0001 * min) / delta))) * delta;
     else if (min >= 1.0)
-      calcmin = ((float) ((int) ((.9999 * min) / delta))) * delta;
+      calcmin = ((float)((int)((.9999 * min) / delta))) * delta;
     else
       calcmin = min;
     if (max < 0.0)
-      calcmax = ((float) ((int) ((.9999 * max) / delta))) * delta;
+      calcmax = ((float)((int)((.9999 * max) / delta))) * delta;
     else if (max > 0.0)
-      calcmax = ((float) ((int) ((max + .9999 * delta) / delta))) * delta;
+      calcmax = ((float)((int)((max + .9999 * delta) / delta))) * delta;
     else
       calcmax = max;
 
     axis->DrawOrigin = calcmin;
-    axis->DrawMax = calcmax;
-    axis->DrawSize = calcmax - calcmin;
-    axis->MajorInc = delta;
-    axis->MajorNum = majornum;
-    axis->MinorNum = minornum;
+    axis->DrawMax    = calcmax;
+    axis->DrawSize   = calcmax - calcmin;
+    axis->MajorInc   = delta;
+    axis->MajorNum   = majornum;
+    axis->MinorNum   = minornum;
 
     delta = log10(axis->MajorInc);
-    if (delta > 0.0)
-      decimals = -(int) floor(delta) + majordecimals;
-    else
-      decimals = (int) ceil(-delta) + majordecimals;
-    if (decimals < 0)
-      decimals = 0;
-#ifdef DEBUG_SCIPLOT
-    printf("delta=%f majordecimals=%d decimals=%d\n",
-      delta, majordecimals, decimals);
-#endif
+    if (delta > 0.0) decimals = -(int)floor(delta) + majordecimals;
+    else             decimals = (int)ceil(-delta)   + majordecimals;
+    if (decimals < 0) decimals = 0;
     axis->Precision = decimals;
   }
-
-#ifdef DEBUG_SCIPLOT
-  printf("Tics: min=%f max=%f size=%f  major inc=%f #major=%d #minor=%d decimals=%d\n",
-    axis->DrawOrigin, axis->DrawMax, axis->DrawSize,
-    axis->MajorInc, axis->MajorNum, axis->MinorNum, axis->Precision);
-#endif
 }
 
-static void 
-ComputeDrawingRange (SciPlotWidget w)
+static void
+ComputeDrawingRange(SciPlotWidget *w)
 {
-  if (w->plot.ChartType == XtCARTESIAN) {
-    ComputeAxis(&w->plot.x, w->plot.Min.x, w->plot.Max.x,
-      w->plot.XLog);
-    ComputeAxis(&w->plot.y, w->plot.Min.y, w->plot.Max.y,
-      w->plot.YLog);
-  }
-  else {
-    ComputeAxis(&w->plot.x, (real) 0.0, w->plot.Max.x,
-      (Boolean) FALSE);
-    w->plot.PolarScale = w->plot.x.DrawMax;
+  if (w->ChartType == XtCARTESIAN) {
+    ComputeAxis(&w->x, w->Min.x, w->Max.x, w->XLog);
+    ComputeAxis(&w->y, w->Min.y, w->Max.y, w->YLog);
+  } else {
+    ComputeAxis(&w->x, (real)0.0, w->Max.x, FALSE);
+    w->PolarScale = w->x.DrawMax;
   }
 }
 
-static Boolean 
-CheckMinMax (SciPlotWidget w)
+static gboolean
+CheckMinMax(SciPlotWidget *w)
 {
-  register int i, j;
-  register SciPlotList *p;
-  register real val;
+  int i, j;
+  SciPlotList *p;
+  real val;
 
-  if (w->plot.ChartType == XtCARTESIAN) {
-    for (i = 0; i < w->plot.num_plotlist; i++) {
-      p = w->plot.plotlist + i;
+  if (w->ChartType == XtCARTESIAN) {
+    for (i = 0; i < w->num_plotlist; i++) {
+      p = w->plotlist + i;
       if (p->draw) {
-	for (j = 0; j < p->number; j++) {
-          
-            /* Don't count the "break in line segment" flag for Min/Max */
-          if (p->data[j].x > SCIPLOT_SKIP_VAL &&
-              p->data[j].y > SCIPLOT_SKIP_VAL) {
-            
+        for (j = 0; j < p->number; j++) {
+          if (p->data[j].x > SCIPLOT_SKIP_VAL && p->data[j].y > SCIPLOT_SKIP_VAL) {
             val = p->data[j].x;
-            if (val > w->plot.x.DrawMax || val < w->plot.x.DrawOrigin)
-              return True;
+            if (val > w->x.DrawMax || val < w->x.DrawOrigin) return TRUE;
             val = p->data[j].y;
-            if (val > w->plot.y.DrawMax || val < w->plot.y.DrawOrigin)
-              return True;
+            if (val > w->y.DrawMax || val < w->y.DrawOrigin) return TRUE;
           }
         }
       }
     }
-  }
-  else {
-    for (i = 0; i < w->plot.num_plotlist; i++) {
-      p = w->plot.plotlist + i;
+  } else {
+    for (i = 0; i < w->num_plotlist; i++) {
+      p = w->plotlist + i;
       if (p->draw) {
-	for (j = 0; j < p->number; j++) {
-	  val = p->data[j].x;
-	  if (val > w->plot.Max.x || val < w->plot.Min.x)
-	    return True;
-	}
+        for (j = 0; j < p->number; j++) {
+          val = p->data[j].x;
+          if (val > w->Max.x || val < w->Min.x) return TRUE;
+        }
       }
     }
   }
-  return False;
+  return FALSE;
 }
 
-static void 
-ComputeMinMax (SciPlotWidget w)
+static void
+ComputeMinMax(SciPlotWidget *w)
 {
-  register int i, j;
-  register SciPlotList *p;
-  register real val;
-  Boolean firstx, firsty;
+  int i, j;
+  SciPlotList *p;
+  real val;
+  gboolean firstx = TRUE, firsty = TRUE;
 
-  w->plot.Min.x = w->plot.Min.y = w->plot.Max.x = w->plot.Max.y = 1.0;
-  firstx = True;
-  firsty = True;
+  w->Min.x = w->Min.y = w->Max.x = w->Max.y = 1.0;
 
-  for (i = 0; i < w->plot.num_plotlist; i++) {
-    p = w->plot.plotlist + i;
+  for (i = 0; i < w->num_plotlist; i++) {
+    p = w->plotlist + i;
     if (p->draw) {
       for (j = 0; j < p->number; j++) {
-          
-          /* Don't count the "break in line segment" flag for Min/Max */
-        if (p->data[j].x > SCIPLOT_SKIP_VAL &&
-            p->data[j].y > SCIPLOT_SKIP_VAL) {
-            
+        if (p->data[j].x > SCIPLOT_SKIP_VAL && p->data[j].y > SCIPLOT_SKIP_VAL) {
           val = p->data[j].x;
-          if (!w->plot.XLog || (w->plot.XLog && (val > 0.0))) {
-            if (firstx) {
-              w->plot.Min.x = w->plot.Max.x = val;
-              firstx = False;
-            }
-            else {
-              if (val > w->plot.Max.x)
-                w->plot.Max.x = val;
-              else if (val < w->plot.Min.x)
-                w->plot.Min.x = val;
-            }
+          if (!w->XLog || val > 0.0) {
+            if (firstx) { w->Min.x = w->Max.x = val; firstx = FALSE; }
+            else { if (val > w->Max.x) w->Max.x = val; else if (val < w->Min.x) w->Min.x = val; }
           }
-
           val = p->data[j].y;
-          if (!w->plot.YLog || (w->plot.YLog && (val > 0.0))) {
-            if (firsty) {
-              w->plot.Min.y = w->plot.Max.y = val;
-              firsty = False;
-            }
-            else {
-              if (val > w->plot.Max.y)
-                w->plot.Max.y = val;
-              else if (val < w->plot.Min.y)
-                w->plot.Min.y = val;
-            }
+          if (!w->YLog || val > 0.0) {
+            if (firsty) { w->Min.y = w->Max.y = val; firsty = FALSE; }
+            else { if (val > w->Max.y) w->Max.y = val; else if (val < w->Min.y) w->Min.y = val; }
           }
         }
-        
       }
     }
   }
 
-    /* fix defaults if there is only one point. */
-  if (firstx) {
-    if (w->plot.XLog) {
-      w->plot.Min.x = 1.0;
-      w->plot.Max.x = 10.0;
-    }
-    else {
-      w->plot.Min.x = 0.0;
-      w->plot.Max.x = 10.0;
-    }
-  }
-  if (firsty) {
-    if (w->plot.YLog) {
-      w->plot.Min.y = 1.0;
-      w->plot.Max.y = 10.0;
-    }
-    else {
-      w->plot.Min.y = 0.0;
-      w->plot.Max.y = 10.0;
-    }
-  }
-  if (w->plot.ChartType == XtCARTESIAN) {
-    if (!w->plot.XLog) {
-      if (!w->plot.XAutoScale) {
-	w->plot.Min.x = w->plot.UserMin.x;
-	w->plot.Max.x = w->plot.UserMax.x;
-      }
-      else if (w->plot.XOrigin) {
-	if (w->plot.Min.x > 0.0)
-	  w->plot.Min.x = 0.0;
-	if (w->plot.Max.x < 0.0)
-	  w->plot.Max.x = 0.0;
-      }
-      if (fabs(w->plot.Min.x - w->plot.Max.x) < 1.e-10) {
-	w->plot.Min.x -= .5;
-	w->plot.Max.x += .5;
-      }
-    }
-    if (!w->plot.YLog) {
-      if (!w->plot.YAutoScale) {
-	w->plot.Min.y = w->plot.UserMin.y;
-	w->plot.Max.y = w->plot.UserMax.y;
-      }
-      else if (w->plot.YOrigin) {
-	if (w->plot.Min.y > 0.0)
-	  w->plot.Min.y = 0.0;
-	if (w->plot.Max.y < 0.0)
-	  w->plot.Max.y = 0.0;
-      }
-      if (fabs(w->plot.Min.y - w->plot.Max.y) < 1.e-10) {
-	w->plot.Min.y -= .5;
-	w->plot.Max.y += .5;
-      }
-    }
-  }
-  else {
-    if (fabs(w->plot.Min.x) > fabs(w->plot.Max.x))
-      w->plot.Max.x = fabs(w->plot.Min.x);
-  }
+  if (firstx) { w->Min.x = w->XLog ? 1.0 : 0.0; w->Max.x = 10.0; }
+  if (firsty) { w->Min.y = w->YLog ? 1.0 : 0.0; w->Max.y = 10.0; }
 
-#ifdef DEBUG_SCIPLOT
-  printf("Min: (%f,%f)\tMax: (%f,%f)\n",
-    w->plot.Min.x, w->plot.Min.y,
-    w->plot.Max.x, w->plot.Max.y);
-#endif
+  if (w->ChartType == XtCARTESIAN) {
+    if (!w->XLog) {
+      if (!w->XAutoScale) { w->Min.x = w->UserMin.x; w->Max.x = w->UserMax.x; }
+      else if (w->XOrigin) {
+        if (w->Min.x > 0.0) w->Min.x = 0.0;
+        if (w->Max.x < 0.0) w->Max.x = 0.0;
+      }
+      if (fabs(w->Min.x - w->Max.x) < 1.e-10) { w->Min.x -= .5; w->Max.x += .5; }
+    }
+    if (!w->YLog) {
+      if (!w->YAutoScale) { w->Min.y = w->UserMin.y; w->Max.y = w->UserMax.y; }
+      else if (w->YOrigin) {
+        if (w->Min.y > 0.0) w->Min.y = 0.0;
+        if (w->Max.y < 0.0) w->Max.y = 0.0;
+      }
+      if (fabs(w->Min.y - w->Max.y) < 1.e-10) { w->Min.y -= .5; w->Max.y += .5; }
+    }
+  } else {
+    if (fabs(w->Min.x) > fabs(w->Max.x)) w->Max.x = fabs(w->Min.x);
+  }
 }
 
-static void 
-ComputeLegendDimensions (SciPlotWidget w)
+static void
+ComputeLegendDimensions(SciPlotWidget *w)
 {
   real current, xmax, ymax;
   int i;
   SciPlotList *p;
 
-  if (w->plot.ShowLegend) {
-    xmax = 0.0;
-    ymax = 2.0 * (real) w->plot.LegendMargin;
-
-    for (i = 0; i < w->plot.num_plotlist; i++) {
-      p = w->plot.plotlist + i;
+  if (w->ShowLegend) {
+    xmax = 0.0; ymax = 2.0 * (real)w->LegendMargin;
+    for (i = 0; i < w->num_plotlist; i++) {
+      p = w->plotlist + i;
       if (p->draw) {
-	current = (real) w->plot.Margin +
-	  (real) w->plot.LegendMargin * 3.0 +
-	  (real) w->plot.LegendLineSize +
-	  FontnumTextWidth(w, w->plot.axisFont, p->legend);
-	if (current > xmax)
-	  xmax = current;
-	ymax += FontnumHeight(w, w->plot.axisFont);
+        current = (real)w->Margin + (real)w->LegendMargin * 3.0 +
+                  (real)w->LegendLineSize +
+                  FontnumTextWidth(w, w->axisFont, p->legend);
+        if (current > xmax) xmax = current;
+        ymax += FontnumHeight(w, w->axisFont);
       }
     }
-
-    w->plot.x.LegendSize = xmax;
-    w->plot.x.LegendPos = (real) w->plot.Margin;
-    w->plot.y.LegendSize = ymax;
-    w->plot.y.LegendPos = 0.0;
-  }
-  else {
-    w->plot.x.LegendSize =
-      w->plot.x.LegendPos =
-      w->plot.y.LegendSize =
-      w->plot.y.LegendPos = 0.0;
+    w->x.LegendSize = xmax;  w->x.LegendPos = (real)w->Margin;
+    w->y.LegendSize = ymax;  w->y.LegendPos = 0.0;
+  } else {
+    w->x.LegendSize = w->x.LegendPos = w->y.LegendSize = w->y.LegendPos = 0.0;
   }
 }
 
-static void 
-ComputeDimensions (SciPlotWidget w)
+static void
+ComputeDimensions(SciPlotWidget *w)
 {
-  real x, y, width, height, axisnumbersize, axisXlabelsize, axisYlabelsize;
+  real x, y, width, height;
 
-/* x,y is the origin of the upper left corner of the drawing area inside
- * the widget.  Doesn't necessarily have to be (Margin,Margin) as it is now.
- */
-  x = (real) w->plot.Margin;
-  y = (real) w->plot.Margin;
+  x = (real)w->Margin;  y = (real)w->Margin;
+  width  = (real)gtk_widget_get_width(GTK_WIDGET(w))  - (real)w->Margin - x - w->x.LegendSize;
+  height = (real)gtk_widget_get_height(GTK_WIDGET(w)) - (real)w->Margin - y;
 
-/* width = (real)w->core.width - (real)w->plot.Margin - x -
- * **           legendwidth - AxisFontHeight
- */
-  width = (real) w->core.width - (real) w->plot.Margin - x -
-    w->plot.x.LegendSize;
+  w->x.Origin = x;  w->y.Origin = y;
 
-/* height = (real)w->core.height - (real)w->plot.Margin - y
- *           - Height of axis numbers (including margin)
- *           - Height of axis label (including margin)
- *           - Height of Title (including margin)
- */
-  height = (real) w->core.height - (real) w->plot.Margin - y;
+  if (w->ShowTitle)
+    height -= (real)w->TitleMargin + FontnumHeight(w, w->titleFont);
 
-  w->plot.x.Origin = x;
-  w->plot.y.Origin = y;
-
-/* Adjust the size depending upon what sorts of text are visible. */
-  if (w->plot.ShowTitle)
-    height -= (real) w->plot.TitleMargin +
-      FontnumHeight(w, w->plot.titleFont);
-
-  if (w->plot.ChartType == XtCARTESIAN) {
-    axisnumbersize = (real) w->plot.Margin +
-      FontnumHeight(w, w->plot.axisFont);
-    if (w->plot.XAxisNumbers) {
-      height -= axisnumbersize;
-    }
-    if (w->plot.YAxisNumbers) {
-      width -= axisnumbersize;
-      w->plot.x.Origin += axisnumbersize;
-    }
-    
-    if (w->plot.ShowXLabel) {
-      axisXlabelsize = (real) w->plot.Margin +
-	FontnumHeight(w, w->plot.labelFont);
-      height -= axisXlabelsize;
-    }
-    if (w->plot.ShowYLabel) {
-      axisYlabelsize = (real) w->plot.Margin +
-	FontnumHeight(w, w->plot.labelFont);
-      width -= axisYlabelsize;
-      w->plot.x.Origin += axisYlabelsize;
+  if (w->ChartType == XtCARTESIAN) {
+    real axisnumbersize = (real)w->Margin + FontnumHeight(w, w->axisFont);
+    if (w->XAxisNumbers) height -= axisnumbersize;
+    if (w->YAxisNumbers) { width -= axisnumbersize; w->x.Origin += axisnumbersize; }
+    if (w->ShowXLabel) height -= (real)w->Margin + FontnumHeight(w, w->labelFont);
+    if (w->ShowYLabel) {
+      real s = (real)w->Margin + FontnumHeight(w, w->labelFont);
+      width -= s;  w->x.Origin += s;
     }
   }
 
-  w->plot.x.Size = width;
-  w->plot.y.Size = height;
-
-/* Adjust parameters for polar plot */
-  if (w->plot.ChartType == XtPOLAR) {
-    if (height < width)
-      w->plot.x.Size = height;
-  }
-  w->plot.x.Center = w->plot.x.Origin + (width / 2.0);
-  w->plot.y.Center = w->plot.y.Origin + (height / 2.0);
-
+  w->x.Size = width;  w->y.Size = height;
+  if (w->ChartType == XtPOLAR && height < width) w->x.Size = height;
+  w->x.Center = w->x.Origin + (width / 2.0);
+  w->y.Center = w->y.Origin + (height / 2.0);
 }
 
-static void 
-AdjustDimensionsCartesian (SciPlotWidget w)
+static void
+AdjustDimensionsCartesian(SciPlotWidget *w)
 {
   real xextra, yextra, val, xhorz;
   real x, y, width, height, axisnumbersize, axisXlabelsize, axisYlabelsize;
   char numberformat[16], label[16];
   int precision;
 
-/* Compute xextra and yextra, which are the extra distances that the text
- * labels on the axes stick outside of the graph.
- */
   xextra = yextra = 0.0;
-  if (w->plot.XAxisNumbers) {
-    precision = w->plot.x.Precision;
-    if (w->plot.XLog) {
-      val = w->plot.x.DrawMax;
-      precision -= w->plot.x.MajorNum;
-      if (precision < 0)
-        precision = 0;
-    }
-    else
-      val = w->plot.x.DrawOrigin + floor(w->plot.x.DrawSize /
-        w->plot.x.MajorInc) * w->plot.x.MajorInc;
+  if (w->XAxisNumbers) {
+    precision = w->x.Precision;
+    if (w->XLog) {
+      val = w->x.DrawMax;
+      precision -= w->x.MajorNum;
+      if (precision < 0) precision = 0;
+    } else
+      val = w->x.DrawOrigin + floor(w->x.DrawSize / w->x.MajorInc) * w->x.MajorInc;
     x = PlotX(w, val);
-    sprintf(numberformat, "%%.%df", precision);
-    sprintf(label, numberformat, val);
-    x += FontnumTextWidth(w, w->plot.axisFont, label);
-    if ((int) x > w->core.width) {
-      xextra = ceil(x - w->core.width + w->plot.Margin);
-      if (xextra < 0.0)
-        xextra = 0.0;
+    snprintf(numberformat, sizeof(numberformat), "%%.%df", precision);
+    snprintf(label, sizeof(label), numberformat, val);
+    x += FontnumTextWidth(w, w->axisFont, label);
+    if ((int)x > gtk_widget_get_width(GTK_WIDGET(w))) {
+      xextra = ceil(x - gtk_widget_get_width(GTK_WIDGET(w)) + w->Margin);
+      if (xextra < 0.0) xextra = 0.0;
     }
   }
-  
-  yextra=xhorz=0.0;
-  if (w->plot.YAxisNumbers) {
-    precision = w->plot.y.Precision;
-    if (w->plot.YLog) {
-      int p1,p2;
 
-      p1=precision;
-      val = w->plot.y.DrawOrigin;
-      if (p1 > 0)
-        p1--;
-    
-      val = w->plot.y.DrawMax;
-      p2 = precision - w->plot.y.MajorNum;
-      if (p2 < 0)
-        p2 = 0;
-
-      if (p1>p2) precision=p1;
-      else precision=p2;
-    }
-    else
-      val = w->plot.y.DrawOrigin + floor(w->plot.y.DrawSize /
-        w->plot.y.MajorInc * 1.0001) * w->plot.y.MajorInc;
+  yextra = xhorz = 0.0;
+  if (w->YAxisNumbers) {
+    precision = w->y.Precision;
+    if (w->YLog) {
+      int p1, p2;
+      p1 = precision;  if (p1 > 0) p1--;
+      p2 = precision - w->y.MajorNum;  if (p2 < 0) p2 = 0;
+      precision = (p1 > p2) ? p1 : p2;
+      val = w->y.DrawMax;
+    } else
+      val = w->y.DrawOrigin + floor(w->y.DrawSize / w->y.MajorInc * 1.0001) * w->y.MajorInc;
     y = PlotY(w, val);
-    sprintf(numberformat, "%%.%df", precision);
-    sprintf(label, numberformat, val);
-#ifdef DEBUG_SCIPLOT
-    printf("ylabel=%s\n", label);
-#endif
-    if (w->plot.YNumHorz) {
-      yextra=FontnumHeight(w, w->plot.axisFont)/2.0;
-      xhorz=FontnumTextWidth(w, w->plot.axisFont, label) + (real)w->plot.Margin;
-    }
-    else {
-      y -= FontnumTextWidth(w, w->plot.axisFont, label);
-      if ((int) y <= 0) {
-        yextra = ceil(w->plot.Margin - y);
-        if (yextra < 0.0)
-          yextra = 0.0;
+    snprintf(numberformat, sizeof(numberformat), "%%.%df", precision);
+    snprintf(label, sizeof(label), numberformat, val);
+    if (w->YNumHorz) {
+      yextra = FontnumHeight(w, w->axisFont) / 2.0;
+      xhorz  = FontnumTextWidth(w, w->axisFont, label) + (real)w->Margin;
+    } else {
+      y -= FontnumTextWidth(w, w->axisFont, label);
+      if ((int)y <= 0) {
+        yextra = ceil(w->Margin - y);
+        if (yextra < 0.0) yextra = 0.0;
       }
     }
   }
-  
-/* x,y is the origin of the upper left corner of the drawing area inside
- * the widget.  Doesn't necessarily have to be (Margin,Margin) as it is now.
- */
-  x = (real) w->plot.Margin + xhorz;
-  y = (real) w->plot.Margin + yextra;
 
-/* width = (real)w->core.width - (real)w->plot.Margin - x -
- *          legendwidth - AxisFontHeight
- */
-  width = (real) w->core.width - (real) w->plot.Margin - x - xextra;
+  x = (real)w->Margin + xhorz;  y = (real)w->Margin + yextra;
+  width  = (real)gtk_widget_get_width(GTK_WIDGET(w))  - (real)w->Margin - x - xextra;
+  height = (real)gtk_widget_get_height(GTK_WIDGET(w)) - (real)w->Margin - y;
+  w->x.Origin = x;  w->y.Origin = y;
 
+  if (w->ShowTitle)
+    height -= (real)w->TitleMargin + FontnumHeight(w, w->titleFont);
 
-/* height = (real)w->core.height - (real)w->plot.Margin - y
- *           - Height of axis numbers (including margin)
- *           - Height of axis label (including margin)
- *           - Height of Title (including margin)
- */
-  height = (real) w->core.height - (real) w->plot.Margin - y;
-
-  w->plot.x.Origin = x;
-  w->plot.y.Origin = y;
-
-/* Adjust the size depending upon what sorts of text are visible. */
-  if (w->plot.ShowTitle)
-    height -= (real) w->plot.TitleMargin +
-      FontnumHeight(w, w->plot.titleFont);
-
-  axisXlabelsize = 0.0;
-  axisYlabelsize = 0.0;
-  axisnumbersize = (real) w->plot.Margin +
-    FontnumHeight(w, w->plot.axisFont);
-  if (w->plot.XAxisNumbers) {
-    height -= axisnumbersize;
-  }
-  if (w->plot.YAxisNumbers && !w->plot.YNumHorz) {
-    width -= axisnumbersize;
-    w->plot.x.Origin += axisnumbersize;
-  }
-  
-  if (w->plot.ShowXLabel) {
-    axisXlabelsize = (real) w->plot.Margin +
-      FontnumHeight(w, w->plot.labelFont);
-    height -= axisXlabelsize;
-  }
-  if (w->plot.ShowYLabel) {
-    axisYlabelsize = (real) w->plot.Margin +
-      FontnumHeight(w, w->plot.labelFont);
-    width -= axisYlabelsize;
-    w->plot.x.Origin += axisYlabelsize;
+  axisXlabelsize = 0.0; axisYlabelsize = 0.0;
+  axisnumbersize = (real)w->Margin + FontnumHeight(w, w->axisFont);
+  if (w->XAxisNumbers) height -= axisnumbersize;
+  if (w->YAxisNumbers && !w->YNumHorz) { width -= axisnumbersize; w->x.Origin += axisnumbersize; }
+  if (w->ShowXLabel) { axisXlabelsize = (real)w->Margin + FontnumHeight(w, w->labelFont); height -= axisXlabelsize; }
+  if (w->ShowYLabel) {
+    axisYlabelsize = (real)w->Margin + FontnumHeight(w, w->labelFont);
+    width -= axisYlabelsize;  w->x.Origin += axisYlabelsize;
   }
 
-/* Move legend position to the right of the plot */
-  if (w->plot.LegendThroughPlot) {
-    w->plot.x.LegendPos += w->plot.x.Origin + width - w->plot.x.LegendSize;
-    w->plot.y.LegendPos += w->plot.y.Origin;
-  }
-  else {
-    width -= w->plot.x.LegendSize;
-    w->plot.x.LegendPos += w->plot.x.Origin + width;
-    w->plot.y.LegendPos += w->plot.y.Origin;
+  if (w->LegendThroughPlot) {
+    w->x.LegendPos += w->x.Origin + width - w->x.LegendSize;
+    w->y.LegendPos += w->y.Origin;
+  } else {
+    width -= w->x.LegendSize;
+    w->x.LegendPos += w->x.Origin + width;
+    w->y.LegendPos += w->y.Origin;
   }
 
-  w->plot.x.Size = width;
-  w->plot.y.Size = height;
+  w->x.Size = width;  w->y.Size = height;
 
-  w->plot.y.AxisPos = w->plot.y.Origin + w->plot.y.Size +
-    (real) w->plot.Margin +
-    FontnumAscent(w, w->plot.axisFont);
-  if (w->plot.YNumHorz) {
-    w->plot.x.AxisPos = w->plot.x.Origin - (real) w->plot.Margin;
-  }
-  else {
-    w->plot.x.AxisPos = w->plot.x.Origin -
-      (real) w->plot.Margin -
-      FontnumDescent(w, w->plot.axisFont);
-  }
-  
-  w->plot.y.LabelPos = w->plot.y.Origin + w->plot.y.Size +
-    (real) w->plot.Margin + (FontnumHeight(w, w->plot.labelFont) / 2.0);
-  if (w->plot.XAxisNumbers)
-    w->plot.y.LabelPos += axisnumbersize;
-  if (w->plot.YAxisNumbers) {
-    if (w->plot.YNumHorz) {
-      w->plot.x.LabelPos = w->plot.x.Origin -
-        xhorz - (real) w->plot.Margin -
-        (FontnumHeight(w, w->plot.labelFont) / 2.0);
-    }
-    else {
-      w->plot.x.LabelPos = w->plot.x.Origin -
-        axisnumbersize - (real) w->plot.Margin -
-        (FontnumHeight(w, w->plot.labelFont) / 2.0);
-    }
-  }
-  else {
-    w->plot.x.LabelPos = w->plot.x.Origin - (real) w->plot.Margin -
-        (FontnumHeight(w, w->plot.labelFont) / 2.0);
-  }
-  
-  w->plot.y.TitlePos = (real) w->core.height - (real) w->plot.Margin;
-  w->plot.x.TitlePos = (real) w->plot.Margin;
+  w->y.AxisPos = w->y.Origin + w->y.Size + (real)w->Margin + FontnumAscent(w, w->axisFont);
+  if (w->YNumHorz)
+    w->x.AxisPos = w->x.Origin - (real)w->Margin;
+  else
+    w->x.AxisPos = w->x.Origin - (real)w->Margin - FontnumDescent(w, w->axisFont);
 
-#ifdef DEBUG_SCIPLOT
-  printf("y.Origin:		%f\n", w->plot.y.Origin);
-  printf("y.Size:			%f\n", w->plot.y.Size);
-  printf("axisnumbersize:		%f\n", axisnumbersize);
-  printf("y.axisLabelSize:	%f\n", axisYlabelsize);
-  printf("y.TitleSize:		%f\n",
-    (real) w->plot.TitleMargin + FontnumHeight(w, w->plot.titleFont));
-  printf("y.Margin:		%f\n", (real) w->plot.Margin);
-  printf("total-------------------%f\n", w->plot.y.Origin + w->plot.y.Size +
-    axisnumbersize + axisYlabelsize + (real) w->plot.Margin +
-    (real) w->plot.TitleMargin + FontnumHeight(w, w->plot.titleFont));
-  printf("total should be---------%f\n", (real) w->core.height);
-#endif
+  w->y.LabelPos = w->y.Origin + w->y.Size + (real)w->Margin +
+                  (FontnumHeight(w, w->labelFont) / 2.0);
+  if (w->XAxisNumbers) w->y.LabelPos += axisnumbersize;
+  if (w->YAxisNumbers) {
+    if (w->YNumHorz)
+      w->x.LabelPos = w->x.Origin - xhorz - (real)w->Margin -
+                      (FontnumHeight(w, w->labelFont) / 2.0);
+    else
+      w->x.LabelPos = w->x.Origin - axisnumbersize - (real)w->Margin -
+                      (FontnumHeight(w, w->labelFont) / 2.0);
+  } else {
+    w->x.LabelPos = w->x.Origin - (real)w->Margin -
+                    (FontnumHeight(w, w->labelFont) / 2.0);
+  }
+
+  w->y.TitlePos = (real)gtk_widget_get_height(GTK_WIDGET(w)) - (real)w->Margin;
+  w->x.TitlePos = (real)w->Margin;
 }
 
-static void 
-AdjustDimensionsPolar (SciPlotWidget w)
+static void
+AdjustDimensionsPolar(SciPlotWidget *w)
 {
-  real x, y, xextra, yextra, val;
-  real width, height, size;
+  real x, y, xextra, yextra, val, width, height, size;
   char numberformat[16], label[16];
 
-/* Compute xextra and yextra, which are the extra distances that the text
- * labels on the axes stick outside of the graph.
- */
   xextra = yextra = 0.0;
-  val = w->plot.PolarScale;
+  val = w->PolarScale;
   PlotRTDegrees(w, val, 0.0, &x, &y);
-  sprintf(numberformat, "%%.%df", w->plot.x.Precision);
-  sprintf(label, numberformat, val);
-  x += FontnumTextWidth(w, w->plot.axisFont, label);
-  if ((int) x > w->core.width) {
-    xextra = x - w->core.width + w->plot.Margin;
-    if (xextra < 0.0)
-      xextra = 0.0;
+  snprintf(numberformat, sizeof(numberformat), "%%.%df", w->x.Precision);
+  snprintf(label, sizeof(label), numberformat, val);
+  x += FontnumTextWidth(w, w->axisFont, label);
+  if ((int)x > gtk_widget_get_width(GTK_WIDGET(w))) {
+    xextra = x - gtk_widget_get_width(GTK_WIDGET(w)) + w->Margin;
+    if (xextra < 0.0) xextra = 0.0;
   }
-  yextra = 0.0;
 
+  w->x.Origin = (real)w->Margin;  w->y.Origin = (real)w->Margin;
+  width  = (real)gtk_widget_get_width(GTK_WIDGET(w))  - (real)w->Margin - w->x.Origin - xextra;
+  height = (real)gtk_widget_get_height(GTK_WIDGET(w)) - (real)w->Margin - w->y.Origin - yextra;
+  if (w->ShowTitle) height -= (real)w->TitleMargin + FontnumHeight(w, w->titleFont);
 
-/* x,y is the origin of the upper left corner of the drawing area inside
- * the widget.  Doesn't necessarily have to be (Margin,Margin) as it is now.
- */
-  w->plot.x.Origin = (real) w->plot.Margin;
-  w->plot.y.Origin = (real) w->plot.Margin;
+  size = (height < width) ? height : width;
+  w->x.Center = w->x.Origin + (width / 2.0);
+  w->y.Center = w->y.Origin + (height / 2.0);
+  w->x.LegendPos += width - w->x.LegendSize;
+  w->y.LegendPos += w->y.Origin;
 
-/* width = (real)w->core.width - (real)w->plot.Margin - x -
- *          legendwidth - AxisFontHeight
- */
-  width = (real) w->core.width - (real) w->plot.Margin - w->plot.x.Origin - xextra;
-
-/* height = (real)w->core.height - (real)w->plot.Margin - y
- *           - Height of axis numbers (including margin)
- *           - Height of axis label (including margin)
- *           - Height of Title (including margin)
- */
-  height = (real) w->core.height - (real) w->plot.Margin - w->plot.y.Origin - yextra;
-
-/* Adjust the size depending upon what sorts of text are visible. */
-  if (w->plot.ShowTitle)
-    height -= (real) w->plot.TitleMargin +
-      FontnumHeight(w, w->plot.titleFont);
-
-/* Only need to carry one number for the size, (since it is a circle!) */
-  if (height < width)
-    size = height;
-  else
-    size = width;
-
-/* Assign some preliminary values */
-  w->plot.x.Center = w->plot.x.Origin + (width / 2.0);
-  w->plot.y.Center = w->plot.y.Origin + (height / 2.0);
-  w->plot.x.LegendPos += width - w->plot.x.LegendSize;
-  w->plot.y.LegendPos += w->plot.y.Origin;
-
-/*
- * Check and see if the legend can fit in the blank space in the upper right
- *
- * To fit, the legend must:
- *   1) be less than half the width/height of the plot
- *   2) hmmm.
- */
-  if (!w->plot.LegendThroughPlot) {
+  if (!w->LegendThroughPlot) {
     real radius = size / 2.0;
-    real dist;
-
-    x = w->plot.x.LegendPos - w->plot.x.Center;
-    y = (w->plot.y.LegendPos + w->plot.y.LegendSize) - w->plot.y.Center;
-
-    dist = sqrt(x * x + y * y);
-/*       printf("rad=%f dist=%f: legend=(%f,%f) center=(%f,%f)\n", */
-/*              radius,dist,w->plot.x.LegendPos,w->plot.y.LegendPos, */
-/*              w->plot.x.Center,w->plot.y.Center); */
-
-    /* It doesn't fit if this check is true.  Make the plot smaller */
-
-    /* This is a first cut horrible algorithm.  My calculus is a bit
-     * rusty tonight--can't seem to figure out how to maximize a circle
-     * in a rectangle with a rectangular chunk out of it. */
-    if (dist < radius) {
-      width -= w->plot.x.LegendSize;
-      height -= w->plot.y.LegendSize;
-
-      /* readjust some parameters */
-      w->plot.x.Center = w->plot.x.Origin + width / 2.0;
-      w->plot.y.Center = w->plot.y.Origin + w->plot.y.LegendSize + height / 2.0;
-      if (height < width)
-	size = height;
-      else
-	size = width;
+    x = w->x.LegendPos - w->x.Center;
+    y = (w->y.LegendPos + w->y.LegendSize) - w->y.Center;
+    if (hypot(x,y) < radius) {
+      width  -= w->x.LegendSize;  height -= w->y.LegendSize;
+      w->x.Center = w->x.Origin + width / 2.0;
+      w->y.Center = w->y.Origin + w->y.LegendSize + height / 2.0;
+      size = (height < width) ? height : width;
     }
-
   }
 
-
-/* OK, customization is finished when we reach here. */
-  w->plot.x.Size = w->plot.y.Size = size;
-
-  w->plot.y.TitlePos = w->plot.y.Center + w->plot.y.Size / 2.0 +
-    (real) w->plot.TitleMargin +
-    FontnumAscent(w, w->plot.titleFont);
-  w->plot.x.TitlePos = w->plot.x.Origin;
+  w->x.Size = w->y.Size = size;
+  w->y.TitlePos = w->y.Center + w->y.Size / 2.0 +
+                  (real)w->TitleMargin + FontnumAscent(w, w->titleFont);
+  w->x.TitlePos = w->x.Origin;
 }
 
-static void 
-AdjustDimensions (SciPlotWidget w)
+static void
+AdjustDimensions(SciPlotWidget *w)
 {
-  if (w->plot.ChartType == XtCARTESIAN) {
-    AdjustDimensionsCartesian(w);
-  }
-  else {
-    AdjustDimensionsPolar(w);
-  }
+  if (w->ChartType == XtCARTESIAN) AdjustDimensionsCartesian(w);
+  else                              AdjustDimensionsPolar(w);
 }
 
-static void 
-ComputeAllDimensions (SciPlotWidget w)
+static void
+ComputeAllDimensions(SciPlotWidget *w)
 {
   ComputeLegendDimensions(w);
   ComputeDimensions(w);
@@ -2787,1025 +1350,746 @@ ComputeAllDimensions (SciPlotWidget w)
   AdjustDimensions(w);
 }
 
-static void 
-ComputeAll (SciPlotWidget w)
+static void
+ComputeAll(SciPlotWidget *w)
 {
   ComputeMinMax(w);
   ComputeAllDimensions(w);
 }
 
-
-/*
- * Private drawing routines
+/* ==========================================================================
+ * Drawing routines (fill display list)
  */
 
-static void 
-DrawMarker (SciPlotWidget w, real xpaper, real ypaper, real size, int color, int style)
+static void
+DrawMarker(SciPlotWidget *w, real xp, real yp, real size, int color, int style)
 {
   real sizex, sizey;
-
   switch (style) {
   case XtMARKER_CIRCLE:
-    CircleSet(w, xpaper, ypaper, size, color, XtLINE_SOLID);
-    break;
+    CircleSet(w, xp, yp, size, color, XtLINE_SOLID); break;
   case XtMARKER_FCIRCLE:
-    FilledCircleSet(w, xpaper, ypaper, size, color, XtLINE_SOLID);
-    break;
+    FilledCircleSet(w, xp, yp, size, color, XtLINE_SOLID); break;
   case XtMARKER_SQUARE:
     size -= .5;
-    RectSet(w, xpaper - size, ypaper - size,
-      xpaper + size, ypaper + size,
-      color, XtLINE_SOLID);
-    break;
+    RectSet(w, xp-size, yp-size, xp+size, yp+size, color, XtLINE_SOLID); break;
   case XtMARKER_FSQUARE:
     size -= .5;
-    FilledRectSet(w, xpaper - size, ypaper - size,
-      xpaper + size, ypaper + size,
-      color, XtLINE_SOLID);
-    break;
+    FilledRectSet(w, xp-size, yp-size, xp+size, yp+size, color, XtLINE_SOLID); break;
   case XtMARKER_UTRIANGLE:
-    sizex = size * .866;
-    sizey = size / 2.0;
-    TriSet(w, xpaper, ypaper - size,
-      xpaper + sizex, ypaper + sizey,
-      xpaper - sizex, ypaper + sizey,
-      color, XtLINE_SOLID);
-    break;
+    sizex = size*.866; sizey = size/2.0;
+    TriSet(w, xp, yp-size, xp+sizex, yp+sizey, xp-sizex, yp+sizey, color, XtLINE_SOLID); break;
   case XtMARKER_FUTRIANGLE:
-    sizex = size * .866;
-    sizey = size / 2.0;
-    FilledTriSet(w, xpaper, ypaper - size,
-      xpaper + sizex, ypaper + sizey,
-      xpaper - sizex, ypaper + sizey,
-      color, XtLINE_SOLID);
-    break;
+    sizex = size*.866; sizey = size/2.0;
+    FilledTriSet(w, xp, yp-size, xp+sizex, yp+sizey, xp-sizex, yp+sizey, color, XtLINE_SOLID); break;
   case XtMARKER_DTRIANGLE:
-    sizex = size * .866;
-    sizey = size / 2.0;
-    TriSet(w, xpaper, ypaper + size,
-      xpaper + sizex, ypaper - sizey,
-      xpaper - sizex, ypaper - sizey,
-      color, XtLINE_SOLID);
-    break;
+    sizex = size*.866; sizey = size/2.0;
+    TriSet(w, xp, yp+size, xp+sizex, yp-sizey, xp-sizex, yp-sizey, color, XtLINE_SOLID); break;
   case XtMARKER_FDTRIANGLE:
-    sizex = size * .866;
-    sizey = size / 2.0;
-    FilledTriSet(w, xpaper, ypaper + size,
-      xpaper + sizex, ypaper - sizey,
-      xpaper - sizex, ypaper - sizey,
-      color, XtLINE_SOLID);
-    break;
+    sizex = size*.866; sizey = size/2.0;
+    FilledTriSet(w, xp, yp+size, xp+sizex, yp-sizey, xp-sizex, yp-sizey, color, XtLINE_SOLID); break;
   case XtMARKER_RTRIANGLE:
-    sizey = size * .866;
-    sizex = size / 2.0;
-    TriSet(w, xpaper + size, ypaper,
-      xpaper - sizex, ypaper + sizey,
-      xpaper - sizex, ypaper - sizey,
-      color, XtLINE_SOLID);
-    break;
+    sizey = size*.866; sizex = size/2.0;
+    TriSet(w, xp+size, yp, xp-sizex, yp+sizey, xp-sizex, yp-sizey, color, XtLINE_SOLID); break;
   case XtMARKER_FRTRIANGLE:
-    sizey = size * .866;
-    sizex = size / 2.0;
-    FilledTriSet(w, xpaper + size, ypaper,
-      xpaper - sizex, ypaper + sizey,
-      xpaper - sizex, ypaper - sizey,
-      color, XtLINE_SOLID);
-    break;
+    sizey = size*.866; sizex = size/2.0;
+    FilledTriSet(w, xp+size, yp, xp-sizex, yp+sizey, xp-sizex, yp-sizey, color, XtLINE_SOLID); break;
   case XtMARKER_LTRIANGLE:
-    sizey = size * .866;
-    sizex = size / 2.0;
-    TriSet(w, xpaper - size, ypaper,
-      xpaper + sizex, ypaper + sizey,
-      xpaper + sizex, ypaper - sizey,
-      color, XtLINE_SOLID);
-    break;
+    sizey = size*.866; sizex = size/2.0;
+    TriSet(w, xp-size, yp, xp+sizex, yp+sizey, xp+sizex, yp-sizey, color, XtLINE_SOLID); break;
   case XtMARKER_FLTRIANGLE:
-    sizey = size * .866;
-    sizex = size / 2.0;
-    FilledTriSet(w, xpaper - size, ypaper,
-      xpaper + sizex, ypaper + sizey,
-      xpaper + sizex, ypaper - sizey,
-      color, XtLINE_SOLID);
-    break;
+    sizey = size*.866; sizex = size/2.0;
+    FilledTriSet(w, xp-size, yp, xp+sizex, yp+sizey, xp+sizex, yp-sizey, color, XtLINE_SOLID); break;
   case XtMARKER_DIAMOND:
-    QuadSet(w, xpaper, ypaper - size,
-      xpaper + size, ypaper,
-      xpaper, ypaper + size,
-      xpaper - size, ypaper,
-      color, XtLINE_SOLID);
-    break;
+    QuadSet(w, xp, yp-size, xp+size, yp, xp, yp+size, xp-size, yp, color, XtLINE_SOLID); break;
   case XtMARKER_FDIAMOND:
-    FilledQuadSet(w, xpaper, ypaper - size,
-      xpaper + size, ypaper,
-      xpaper, ypaper + size,
-      xpaper - size, ypaper,
-      color, XtLINE_SOLID);
-    break;
+    FilledQuadSet(w, xp, yp-size, xp+size, yp, xp, yp+size, xp-size, yp, color, XtLINE_SOLID); break;
   case XtMARKER_HOURGLASS:
-    QuadSet(w, xpaper - size, ypaper - size,
-      xpaper + size, ypaper - size,
-      xpaper - size, ypaper + size,
-      xpaper + size, ypaper + size,
-      color, XtLINE_SOLID);
-    break;
+    QuadSet(w, xp-size, yp-size, xp+size, yp-size, xp-size, yp+size, xp+size, yp+size, color, XtLINE_SOLID); break;
   case XtMARKER_FHOURGLASS:
-    FilledQuadSet(w, xpaper - size, ypaper - size,
-      xpaper + size, ypaper - size,
-      xpaper - size, ypaper + size,
-      xpaper + size, ypaper + size,
-      color, XtLINE_SOLID);
-    break;
+    FilledQuadSet(w, xp-size, yp-size, xp+size, yp-size, xp-size, yp+size, xp+size, yp+size, color, XtLINE_SOLID); break;
   case XtMARKER_BOWTIE:
-    QuadSet(w, xpaper - size, ypaper - size,
-      xpaper - size, ypaper + size,
-      xpaper + size, ypaper - size,
-      xpaper + size, ypaper + size,
-      color, XtLINE_SOLID);
-    break;
+    QuadSet(w, xp-size, yp-size, xp-size, yp+size, xp+size, yp-size, xp+size, yp+size, color, XtLINE_SOLID); break;
   case XtMARKER_FBOWTIE:
-    FilledQuadSet(w, xpaper - size, ypaper - size,
-      xpaper - size, ypaper + size,
-      xpaper + size, ypaper - size,
-      xpaper + size, ypaper + size,
-      color, XtLINE_SOLID);
-    break;
+    FilledQuadSet(w, xp-size, yp-size, xp-size, yp+size, xp+size, yp-size, xp+size, yp+size, color, XtLINE_SOLID); break;
   case XtMARKER_DOT:
-    FilledCircleSet(w, xpaper, ypaper, 1.5, color, XtLINE_SOLID);
-    break;
-
-  default:
-    break;
+    FilledCircleSet(w, xp, yp, 1.5, color, XtLINE_SOLID); break;
+  default: break;
   }
 }
 
-static void 
-DrawLegend (SciPlotWidget w)
+static void
+DrawLegend(SciPlotWidget *w)
 {
   real x, y, len, height, height2, len2, ascent;
   int i;
   SciPlotList *p;
 
-  w->plot.current_id = SciPlotDrawingLegend;
-  if (w->plot.ShowLegend) {
-    x = w->plot.x.LegendPos;
-    y = w->plot.y.LegendPos;
-    len = (real) w->plot.LegendLineSize;
-    len2 = len / 2.0;
-    height = FontnumHeight(w, w->plot.axisFont);
-    height2 = height / 2.0;
-    ascent = FontnumAscent(w, w->plot.axisFont);
-    RectSet(w, x, y,
-      x + w->plot.x.LegendSize - 1.0 - (real) w->plot.Margin,
-      y + w->plot.y.LegendSize - 1.0,
-      w->plot.ForegroundColor, XtLINE_SOLID);
-    x += (real) w->plot.LegendMargin;
-    y += (real) w->plot.LegendMargin;
+  w->current_id = SciPlotDrawingLegend;
+  if (!w->ShowLegend) return;
 
-    for (i = 0; i < w->plot.num_plotlist; i++) {
-      p = w->plot.plotlist + i;
-      if (p->draw) {
-	LineSet(w, x, y + height2, x + len, y + height2,
-	  p->LineColor, p->LineStyle);
-	DrawMarker(w, x + len2, y + height2, p->markersize,
-	  p->PointColor, p->PointStyle);
-	TextSet(w, x + len + (real) w->plot.LegendMargin,
-	  y + ascent,
-	  p->legend, w->plot.ForegroundColor,
-	  w->plot.axisFont);
-	y += height;
-      }
+  x = w->x.LegendPos;  y = w->y.LegendPos;
+  len = (real)w->LegendLineSize;  len2 = len / 2.0;
+  height = FontnumHeight(w, w->axisFont);  height2 = height / 2.0;
+  ascent = FontnumAscent(w, w->axisFont);
+  RectSet(w, x, y,
+          x + w->x.LegendSize - 1.0 - (real)w->Margin,
+          y + w->y.LegendSize - 1.0,
+          w->ForegroundColor, XtLINE_SOLID);
+  x += (real)w->LegendMargin;  y += (real)w->LegendMargin;
+
+  for (i = 0; i < w->num_plotlist; i++) {
+    p = w->plotlist + i;
+    if (p->draw) {
+      LineSet(w, x, y+height2, x+len, y+height2, p->LineColor, p->LineStyle);
+      DrawMarker(w, x+len2, y+height2, p->markersize, p->PointColor, p->PointStyle);
+      TextSet(w, x+len+(real)w->LegendMargin, y+ascent,
+              p->legend, w->ForegroundColor, w->axisFont);
+      y += height;
     }
   }
 }
 
-static void 
-DrawCartesianAxes (SciPlotWidget w)
+static void
+DrawCartesianAxes(SciPlotWidget *w)
 {
-  real x, y, x1, y1, x2, y2, tic, val, height, majorval;
+  real x, y, x1, y1, x2, y2, tic, val, majorval;
   int j, precision;
   char numberformat[16], label[16];
 
-  w->plot.current_id = SciPlotDrawingAxis;
-  height = FontnumHeight(w, w->plot.labelFont);
-  x1 = PlotX(w, w->plot.x.DrawOrigin);
-  y1 = PlotY(w, w->plot.y.DrawOrigin);
-  x2 = PlotX(w, w->plot.x.DrawMax);
-  y2 = PlotY(w, w->plot.y.DrawMax);
-  LineSet(w, x1, y1, x2, y1, w->plot.ForegroundColor, XtLINE_SOLID);
-  LineSet(w, x1, y1, x1, y2, w->plot.ForegroundColor, XtLINE_SOLID);
+  w->current_id = SciPlotDrawingAxis;
+  x1 = PlotX(w, w->x.DrawOrigin);  y1 = PlotY(w, w->y.DrawOrigin);
+  x2 = PlotX(w, w->x.DrawMax);     y2 = PlotY(w, w->y.DrawMax);
+  LineSet(w, x1, y1, x2, y1, w->ForegroundColor, XtLINE_SOLID);
+  LineSet(w, x1, y1, x1, y2, w->ForegroundColor, XtLINE_SOLID);
 
-  precision = w->plot.x.Precision;
-  sprintf(numberformat, "%%.%df", precision);
-  if (w->plot.XLog) {
-    val = w->plot.x.DrawOrigin;
-    if (precision > 0)
-      precision--;
-  }
-  else {
-    val = w->plot.x.DrawOrigin;
-  }
+  precision = w->x.Precision;
+  snprintf(numberformat, sizeof(numberformat), "%%.%df", precision);
+  val = w->x.DrawOrigin;
+  if (w->XLog && precision > 0) precision--;
   x = PlotX(w, val);
-  if (w->plot.DrawMajorTics)
-    LineSet(w, x, y1 + 5, x, y1 - 5, w->plot.ForegroundColor, XtLINE_SOLID);
-  if (w->plot.XAxisNumbers) {
-    sprintf(label, numberformat, val);
-    TextSet(w, x, w->plot.y.AxisPos, label, w->plot.ForegroundColor,
-      w->plot.axisFont);
+  if (w->DrawMajorTics) LineSet(w, x, y1+5, x, y1-5, w->ForegroundColor, XtLINE_SOLID);
+  if (w->XAxisNumbers) {
+    snprintf(label, sizeof(label), numberformat, val);
+    TextSet(w, x, w->y.AxisPos, label, w->ForegroundColor, w->axisFont);
   }
-  
   majorval = val;
-  while ((majorval * 1.0001) < w->plot.x.DrawMax) {
-    if (w->plot.XLog) {
-
-/* Hack to make sure that 9.99999e? still gets interpreted as 10.0000e? */
-      if (majorval * 1.1 > w->plot.x.DrawMax)
-	break;
+  while ((majorval * 1.0001) < w->x.DrawMax) {
+    if (w->XLog) {
+      if (majorval * 1.1 > w->x.DrawMax) break;
       tic = majorval;
-      if (w->plot.DrawMinor || w->plot.DrawMinorTics) {
-	for (j = 2; j < w->plot.x.MinorNum; j++) {
-	  val = tic * (real) j;
-	  x = PlotX(w, val);
-	  if (w->plot.DrawMinor)
-	    LineSet(w, x, y1, x, y2,
-	      w->plot.ForegroundColor,
-	      XtLINE_WIDEDOT);
-	  if (w->plot.DrawMinorTics)
-	    LineSet(w, x, y1, x, y1 - 3,
-	      w->plot.ForegroundColor,
-	      XtLINE_SOLID);
-	}
+      if (w->DrawMinor || w->DrawMinorTics) {
+        for (j = 2; j < w->x.MinorNum; j++) {
+          val = tic * (real)j;  x = PlotX(w, val);
+          if (w->DrawMinor) LineSet(w, x, y1, x, y2, w->ForegroundColor, XtLINE_WIDEDOT);
+          if (w->DrawMinorTics) LineSet(w, x, y1, x, y1-3, w->ForegroundColor, XtLINE_SOLID);
+        }
       }
-      val = tic * (real) w->plot.x.MinorNum;
-      sprintf(numberformat, "%%.%df", precision);
-      if (precision > 0)
-	precision--;
-    }
-    else {
+      val = tic * (real)w->x.MinorNum;
+      snprintf(numberformat, sizeof(numberformat), "%%.%df", precision);
+      if (precision > 0) precision--;
+    } else {
       tic = majorval;
-      if (w->plot.DrawMinor || w->plot.DrawMinorTics) {
-	for (j = 1; j < w->plot.x.MinorNum; j++) {
-	  val = tic + w->plot.x.MajorInc * (real) j /
-	    w->plot.x.MinorNum;
-	  x = PlotX(w, val);
-	  if (w->plot.DrawMinor)
-	    LineSet(w, x, y1, x, y2,
-	      w->plot.ForegroundColor,
-	      XtLINE_WIDEDOT);
-	  if (w->plot.DrawMinorTics)
-	    LineSet(w, x, y1, x, y1 - 3,
-	      w->plot.ForegroundColor,
-	      XtLINE_SOLID);
-	}
+      if (w->DrawMinor || w->DrawMinorTics) {
+        for (j = 1; j < w->x.MinorNum; j++) {
+          val = tic + w->x.MajorInc * (real)j / w->x.MinorNum;  x = PlotX(w, val);
+          if (w->DrawMinor) LineSet(w, x, y1, x, y2, w->ForegroundColor, XtLINE_WIDEDOT);
+          if (w->DrawMinorTics) LineSet(w, x, y1, x, y1-3, w->ForegroundColor, XtLINE_SOLID);
+        }
       }
-      val = tic + w->plot.x.MajorInc;
+      val = tic + w->x.MajorInc;
     }
     x = PlotX(w, val);
-    if (w->plot.DrawMajor)
-      LineSet(w, x, y1, x, y2, w->plot.ForegroundColor,
-	XtLINE_DOTTED);
-    else if (w->plot.DrawMinor)
-      LineSet(w, x, y1, x, y2, w->plot.ForegroundColor,
-	XtLINE_WIDEDOT);
-    if (w->plot.DrawMajorTics)
-      LineSet(w, x, y1 + 5, x, y1 - 5, w->plot.ForegroundColor,
-	XtLINE_SOLID);
-    if (w->plot.XAxisNumbers) {
-      sprintf(label, numberformat, val);
-      TextSet(w, x, w->plot.y.AxisPos, label, w->plot.ForegroundColor,
-        w->plot.axisFont);
+    if (w->DrawMajor) LineSet(w, x, y1, x, y2, w->ForegroundColor, XtLINE_DOTTED);
+    else if (w->DrawMinor) LineSet(w, x, y1, x, y2, w->ForegroundColor, XtLINE_WIDEDOT);
+    if (w->DrawMajorTics) LineSet(w, x, y1+5, x, y1-5, w->ForegroundColor, XtLINE_SOLID);
+    if (w->XAxisNumbers) {
+      snprintf(label, sizeof(label), numberformat, val);
+      TextSet(w, x, w->y.AxisPos, label, w->ForegroundColor, w->axisFont);
     }
     majorval = val;
   }
-  
-  precision = w->plot.y.Precision;
-  sprintf(numberformat, "%%.%df", precision);
-  if (w->plot.YLog) {
-    val = w->plot.y.DrawOrigin;
-    if (precision > 0)
-      precision--;
-  }
-  else {
-    val = w->plot.y.DrawOrigin;
-  }
+
+  precision = w->y.Precision;
+  snprintf(numberformat, sizeof(numberformat), "%%.%df", precision);
+  val = w->y.DrawOrigin;
+  if (w->YLog && precision > 0) precision--;
   y = PlotY(w, val);
-  if (w->plot.DrawMajorTics)
-    LineSet(w, x1 + 5, y, x1 - 5, y, w->plot.ForegroundColor, XtLINE_SOLID);
-  if (w->plot.YAxisNumbers) {
-    sprintf(label, numberformat, val);
-    if (w->plot.YNumHorz) {
-      y+=FontnumHeight(w, w->plot.axisFont)/2.0 -
-        FontnumDescent(w, w->plot.axisFont);
-      TextSet(w,
-        w->plot.x.AxisPos - FontnumTextWidth(w, w->plot.axisFont, label),
-        y, label, w->plot.ForegroundColor,
-        w->plot.axisFont);
-    }
-    else {
-      VTextSet(w, w->plot.x.AxisPos, y, label, w->plot.ForegroundColor,
-        w->plot.axisFont);
+  if (w->DrawMajorTics) LineSet(w, x1+5, y, x1-5, y, w->ForegroundColor, XtLINE_SOLID);
+  if (w->YAxisNumbers) {
+    snprintf(label, sizeof(label), numberformat, val);
+    if (w->YNumHorz) {
+      y += FontnumHeight(w, w->axisFont)/2.0 - FontnumDescent(w, w->axisFont);
+      TextSet(w, w->x.AxisPos - FontnumTextWidth(w, w->axisFont, label),
+              y, label, w->ForegroundColor, w->axisFont);
+    } else {
+      VTextSet(w, w->x.AxisPos, y, label, w->ForegroundColor, w->axisFont);
     }
   }
   majorval = val;
-
-/* majorval*1.0001 is a fudge to get rid of rounding errors that seem to
- * occur when continuing to add the major axis increment.
- */
-  while ((majorval * 1.0001) < w->plot.y.DrawMax) {
-    if (w->plot.YLog) {
-
-/* Hack to make sure that 9.99999e? still gets interpreted as 10.0000e? */
-      if (majorval * 1.1 > w->plot.y.DrawMax)
-	break;
+  while ((majorval * 1.0001) < w->y.DrawMax) {
+    if (w->YLog) {
+      if (majorval * 1.1 > w->y.DrawMax) break;
       tic = majorval;
-      if (w->plot.DrawMinor || w->plot.DrawMinorTics) {
-	for (j = 2; j < w->plot.y.MinorNum; j++) {
-	  val = tic * (real) j;
-	  y = PlotY(w, val);
-	  if (w->plot.DrawMinor)
-	    LineSet(w, x1, y, x2, y,
-	      w->plot.ForegroundColor,
-	      XtLINE_WIDEDOT);
-	  if (w->plot.DrawMinorTics)
-	    LineSet(w, x1, y, x1 + 3, y,
-	      w->plot.ForegroundColor,
-	      XtLINE_SOLID);
-	}
+      if (w->DrawMinor || w->DrawMinorTics) {
+        for (j = 2; j < w->y.MinorNum; j++) {
+          val = tic * (real)j;  y = PlotY(w, val);
+          if (w->DrawMinor) LineSet(w, x1, y, x2, y, w->ForegroundColor, XtLINE_WIDEDOT);
+          if (w->DrawMinorTics) LineSet(w, x1, y, x1+3, y, w->ForegroundColor, XtLINE_SOLID);
+        }
       }
-      val = tic * (real) w->plot.y.MinorNum;
-      sprintf(numberformat, "%%.%df", precision);
-      if (precision > 0)
-	precision--;
-    }
-    else {
+      val = tic * (real)w->y.MinorNum;
+      snprintf(numberformat, sizeof(numberformat), "%%.%df", precision);
+      if (precision > 0) precision--;
+    } else {
       tic = majorval;
-      if (w->plot.DrawMinor || w->plot.DrawMinorTics) {
-	for (j = 1; j < w->plot.y.MinorNum; j++) {
-	  val = tic + w->plot.y.MajorInc * (real) j /
-	    w->plot.y.MinorNum;
-	  y = PlotY(w, val);
-	  if (w->plot.DrawMinor)
-	    LineSet(w, x1, y, x2, y,
-	      w->plot.ForegroundColor,
-	      XtLINE_WIDEDOT);
-	  if (w->plot.DrawMinorTics)
-	    LineSet(w, x1, y, x1 + 3, y,
-	      w->plot.ForegroundColor,
-	      XtLINE_SOLID);
-	}
+      if (w->DrawMinor || w->DrawMinorTics) {
+        for (j = 1; j < w->y.MinorNum; j++) {
+          val = tic + w->y.MajorInc * (real)j / w->y.MinorNum;  y = PlotY(w, val);
+          if (w->DrawMinor) LineSet(w, x1, y, x2, y, w->ForegroundColor, XtLINE_WIDEDOT);
+          if (w->DrawMinorTics) LineSet(w, x1, y, x1+3, y, w->ForegroundColor, XtLINE_SOLID);
+        }
       }
-      val = tic + w->plot.y.MajorInc;
+      val = tic + w->y.MajorInc;
     }
     y = PlotY(w, val);
-    if (w->plot.DrawMajor)
-      LineSet(w, x1, y, x2, y, w->plot.ForegroundColor,
-	XtLINE_DOTTED);
-    else if (w->plot.DrawMinor)
-      LineSet(w, x1, y, x2, y, w->plot.ForegroundColor,
-	XtLINE_WIDEDOT);
-    if (w->plot.DrawMajorTics)
-      LineSet(w, x1 - 5, y, x1 + 5, y, w->plot.ForegroundColor,
-	XtLINE_SOLID);
-    if (w->plot.YAxisNumbers) {
-      sprintf(label, numberformat, val);
-      if (w->plot.YNumHorz) {
-        y+=FontnumHeight(w, w->plot.axisFont)/2.0 -
-          FontnumDescent(w, w->plot.axisFont);
-        TextSet(w,
-          w->plot.x.AxisPos - FontnumTextWidth(w, w->plot.axisFont, label),
-          y, label, w->plot.ForegroundColor,
-          w->plot.axisFont);
-      }
-      else {
-        VTextSet(w, w->plot.x.AxisPos, y, label, w->plot.ForegroundColor,
-          w->plot.axisFont);
+    if (w->DrawMajor) LineSet(w, x1, y, x2, y, w->ForegroundColor, XtLINE_DOTTED);
+    else if (w->DrawMinor) LineSet(w, x1, y, x2, y, w->ForegroundColor, XtLINE_WIDEDOT);
+    if (w->DrawMajorTics) LineSet(w, x1-5, y, x1+5, y, w->ForegroundColor, XtLINE_SOLID);
+    if (w->YAxisNumbers) {
+      snprintf(label, sizeof(label), numberformat, val);
+      if (w->YNumHorz) {
+        y += FontnumHeight(w, w->axisFont)/2.0 - FontnumDescent(w, w->axisFont);
+        TextSet(w, w->x.AxisPos - FontnumTextWidth(w, w->axisFont, label),
+                y, label, w->ForegroundColor, w->axisFont);
+      } else {
+        VTextSet(w, w->x.AxisPos, y, label, w->ForegroundColor, w->axisFont);
       }
     }
     majorval = val;
   }
-  
-  if (w->plot.ShowTitle)
-    TextSet(w, w->plot.x.TitlePos, w->plot.y.TitlePos,
-      w->plot.plotTitle, w->plot.ForegroundColor,
-      w->plot.titleFont);
-  if (w->plot.ShowXLabel)
-    TextCenter(w, w->plot.x.Origin + (w->plot.x.Size / 2.0),
-      w->plot.y.LabelPos, w->plot.xlabel,
-      w->plot.ForegroundColor, w->plot.labelFont);
-  if (w->plot.ShowYLabel)
-    VTextCenter(w, w->plot.x.LabelPos,
-      w->plot.y.Origin + (w->plot.y.Size / 2.0),
-      w->plot.ylabel, w->plot.ForegroundColor,
-      w->plot.labelFont);
+
+  if (w->ShowTitle)
+    TextSet(w, w->x.TitlePos, w->y.TitlePos, w->plotTitle, w->ForegroundColor, w->titleFont);
+  if (w->ShowXLabel)
+    TextCenter(w, w->x.Origin + (w->x.Size / 2.0), w->y.LabelPos,
+               w->xlabel, w->ForegroundColor, w->labelFont);
+  if (w->ShowYLabel)
+    VTextCenter(w, w->x.LabelPos, w->y.Origin + (w->y.Size / 2.0),
+                w->ylabel, w->ForegroundColor, w->labelFont);
 }
 
-          
-static void 
-DrawCartesianPlot (SciPlotWidget w)
+static void
+DrawCartesianPlot(SciPlotWidget *w)
 {
   int i, j, jstart;
   SciPlotList *p;
 
-  w->plot.current_id = SciPlotDrawingAny;
+  w->current_id = SciPlotDrawingAny;
   ClipSet(w);
-  w->plot.current_id = SciPlotDrawingLine;
-  for (i = 0; i < w->plot.num_plotlist; i++) {
-    p = w->plot.plotlist + i;
+  w->current_id = SciPlotDrawingLine;
+  for (i = 0; i < w->num_plotlist; i++) {
+    p = w->plotlist + i;
     if (p->draw) {
       real x1, y1, x2, y2;
-      Boolean skipnext=False;
-    
+      gboolean skipnext = FALSE;
       jstart = 0;
-      while ((jstart < p->number) &&
-        (((p->data[jstart].x <= SCIPLOT_SKIP_VAL ||
-           p->data[jstart].y <= SCIPLOT_SKIP_VAL) ||
-          (w->plot.XLog && (p->data[jstart].x <= 0.0)) ||
-          (w->plot.YLog && (p->data[jstart].y <= 0.0)))))
+      while (jstart < p->number &&
+             (p->data[jstart].x <= SCIPLOT_SKIP_VAL || p->data[jstart].y <= SCIPLOT_SKIP_VAL ||
+              (w->XLog && p->data[jstart].x <= 0.0) || (w->YLog && p->data[jstart].y <= 0.0)))
         jstart++;
       if (jstart < p->number) {
         x1 = PlotX(w, p->data[jstart].x);
         y1 = PlotY(w, p->data[jstart].y);
       }
       for (j = jstart; j < p->number; j++) {
-        if (p->data[j].x <= SCIPLOT_SKIP_VAL ||
-            p->data[j].y <= SCIPLOT_SKIP_VAL) {
-          skipnext=True;
-          continue;
+        if (p->data[j].x <= SCIPLOT_SKIP_VAL || p->data[j].y <= SCIPLOT_SKIP_VAL) {
+          skipnext = TRUE; continue;
         }
-        
-	if (!((w->plot.XLog && (p->data[j].x <= 0.0)) ||
-	    (w->plot.YLog && (p->data[j].y <= 0.0)))) {
-	  x2 = PlotX(w, p->data[j].x);
-	  y2 = PlotY(w, p->data[j].y);
-          if (!skipnext)
-            LineSet(w, x1, y1, x2, y2, p->LineColor, p->LineStyle);
-	  x1 = x2;
-	  y1 = y2;
-	}
-        
-        skipnext=False;
+        if (!((w->XLog && p->data[j].x <= 0.0) || (w->YLog && p->data[j].y <= 0.0))) {
+          x2 = PlotX(w, p->data[j].x);  y2 = PlotY(w, p->data[j].y);
+          if (!skipnext) LineSet(w, x1, y1, x2, y2, p->LineColor, p->LineStyle);
+          x1 = x2;  y1 = y2;
+        }
+        skipnext = FALSE;
       }
     }
   }
-  w->plot.current_id = SciPlotDrawingAny;
+  w->current_id = SciPlotDrawingAny;
   ClipClear(w);
-  w->plot.current_id = SciPlotDrawingLine;
-  for (i = 0; i < w->plot.num_plotlist; i++) {
-    p = w->plot.plotlist + i;
+  w->current_id = SciPlotDrawingLine;
+  for (i = 0; i < w->num_plotlist; i++) {
+    p = w->plotlist + i;
     if (p->draw) {
       real x2, y2;
-
       for (j = 0; j < p->number; j++) {
-	if (!((w->plot.XLog && (p->data[j].x <= 0.0)) ||
-	    (w->plot.YLog && (p->data[j].y <= 0.0)) ||
-             p->data[j].x <= SCIPLOT_SKIP_VAL ||
-             p->data[j].y <= SCIPLOT_SKIP_VAL )) {
-	  x2 = PlotX(w, p->data[j].x);
-	  y2 = PlotY(w, p->data[j].y);
-	  if ((x2 >= w->plot.x.Origin) &&
-	    (x2 <= w->plot.x.Origin + w->plot.x.Size) &&
-	    (y2 >= w->plot.y.Origin) &&
-	    (y2 <= w->plot.y.Origin + w->plot.y.Size)) {
-
-	    DrawMarker(w, x2, y2,
-	      p->markersize,
-	      p->PointColor,
-	      p->PointStyle);
-	  }
-
-	}
+        if (!((w->XLog && p->data[j].x <= 0.0) || (w->YLog && p->data[j].y <= 0.0) ||
+              p->data[j].x <= SCIPLOT_SKIP_VAL || p->data[j].y <= SCIPLOT_SKIP_VAL)) {
+          x2 = PlotX(w, p->data[j].x);  y2 = PlotY(w, p->data[j].y);
+          if (x2 >= w->x.Origin && x2 <= w->x.Origin + w->x.Size &&
+              y2 >= w->y.Origin && y2 <= w->y.Origin + w->y.Size)
+            DrawMarker(w, x2, y2, p->markersize, p->PointColor, p->PointStyle);
+        }
       }
     }
   }
 }
 
-static void 
-DrawPolarAxes (SciPlotWidget w)
+static void
+DrawPolarAxes(SciPlotWidget *w)
 {
   real x1, y1, x2, y2, max, tic, val, height;
   int i, j;
   char numberformat[16], label[16];
 
-  w->plot.current_id = SciPlotDrawingAxis;
-  sprintf(numberformat, "%%.%df", w->plot.x.Precision);
-  height = FontnumHeight(w, w->plot.labelFont);
-  max = w->plot.PolarScale;
+  w->current_id = SciPlotDrawingAxis;
+  snprintf(numberformat, sizeof(numberformat), "%%.%df", w->x.Precision);
+  height = FontnumHeight(w, w->labelFont);
+  max = w->PolarScale;
   PlotRTDegrees(w, 0.0, 0.0, &x1, &y1);
   PlotRTDegrees(w, max, 0.0, &x2, &y2);
   LineSet(w, x1, y1, x2, y2, 1, XtLINE_SOLID);
   for (i = 45; i < 360; i += 45) {
-    PlotRTDegrees(w, max, (real) i, &x2, &y2);
-    LineSet(w, x1, y1, x2, y2, w->plot.ForegroundColor, XtLINE_DOTTED);
+    PlotRTDegrees(w, max, (real)i, &x2, &y2);
+    LineSet(w, x1, y1, x2, y2, w->ForegroundColor, XtLINE_DOTTED);
   }
-  for (i = 1; i <= w->plot.x.MajorNum; i++) {
-    tic = w->plot.PolarScale *
-      (real) i / (real) w->plot.x.MajorNum;
-    if (w->plot.DrawMinor || w->plot.DrawMinorTics) {
-      for (j = 1; j < w->plot.x.MinorNum; j++) {
-	val = tic - w->plot.x.MajorInc * (real) j /
-	  w->plot.x.MinorNum;
-	PlotRTDegrees(w, val, 0.0, &x2, &y2);
-	if (w->plot.DrawMinor)
-	  CircleSet(w, x1, y1, x2 - x1,
-	    w->plot.ForegroundColor, XtLINE_WIDEDOT);
-	if (w->plot.DrawMinorTics)
-	  LineSet(w, x2, y2 - 2.5, x2, y2 + 2.5,
-	    w->plot.ForegroundColor, XtLINE_SOLID);
+  for (i = 1; i <= w->x.MajorNum; i++) {
+    tic = w->PolarScale * (real)i / (real)w->x.MajorNum;
+    if (w->DrawMinor || w->DrawMinorTics) {
+      for (j = 1; j < w->x.MinorNum; j++) {
+        val = tic - w->x.MajorInc * (real)j / w->x.MinorNum;
+        PlotRTDegrees(w, val, 0.0, &x2, &y2);
+        if (w->DrawMinor)     CircleSet(w, x1, y1, x2-x1, w->ForegroundColor, XtLINE_WIDEDOT);
+        if (w->DrawMinorTics) LineSet(w, x2, y2-2.5, x2, y2+2.5, w->ForegroundColor, XtLINE_SOLID);
       }
     }
     PlotRTDegrees(w, tic, 0.0, &x2, &y2);
-    if (w->plot.DrawMajor)
-      CircleSet(w, x1, y1, x2 - x1, w->plot.ForegroundColor, XtLINE_DOTTED);
-    if (w->plot.DrawMajorTics)
-      LineSet(w, x2, y2 - 5.0, x2, y2 + 5.0, w->plot.ForegroundColor, XtLINE_SOLID);
-    if (w->plot.XAxisNumbers) {
-      sprintf(label, numberformat, tic);
-      TextSet(w, x2, y2 + height, label, w->plot.ForegroundColor, w->plot.axisFont);
+    if (w->DrawMajor)    CircleSet(w, x1, y1, x2-x1, w->ForegroundColor, XtLINE_DOTTED);
+    if (w->DrawMajorTics) LineSet(w, x2, y2-5.0, x2, y2+5.0, w->ForegroundColor, XtLINE_SOLID);
+    if (w->XAxisNumbers) {
+      snprintf(label, sizeof(label), numberformat, tic);
+      TextSet(w, x2, y2+height, label, w->ForegroundColor, w->axisFont);
     }
   }
-  
-  if (w->plot.ShowTitle)
-    TextSet(w, w->plot.x.TitlePos, w->plot.y.TitlePos,
-      w->plot.plotTitle, w->plot.ForegroundColor, w->plot.titleFont);
+  if (w->ShowTitle)
+    TextSet(w, w->x.TitlePos, w->y.TitlePos, w->plotTitle, w->ForegroundColor, w->titleFont);
 }
 
-static void 
-DrawPolarPlot (SciPlotWidget w)
+static void
+DrawPolarPlot(SciPlotWidget *w)
 {
   int i, j;
   SciPlotList *p;
 
-  w->plot.current_id = SciPlotDrawingLine;
-  for (i = 0; i < w->plot.num_plotlist; i++) {
-    p = w->plot.plotlist + i;
+  w->current_id = SciPlotDrawingLine;
+  for (i = 0; i < w->num_plotlist; i++) {
+    p = w->plotlist + i;
     if (p->draw) {
       int jstart;
       real x1, y1, x2, y2;
-      Boolean skipnext=False;
-
+      gboolean skipnext = FALSE;
       jstart = 0;
-      while ((jstart < p->number) &&
-        (p->data[jstart].x <= SCIPLOT_SKIP_VAL ||
-          p->data[jstart].y <= SCIPLOT_SKIP_VAL))
+      while (jstart < p->number &&
+             (p->data[jstart].x <= SCIPLOT_SKIP_VAL || p->data[jstart].y <= SCIPLOT_SKIP_VAL))
         jstart++;
-      if (jstart < p->number) {
+      if (jstart < p->number)
         PlotRT(w, p->data[0].x, p->data[0].y, &x1, &y1);
-      }
       for (j = jstart; j < p->number; j++) {
-        if (p->data[j].x <= SCIPLOT_SKIP_VAL ||
-            p->data[j].y <= SCIPLOT_SKIP_VAL) {
-          skipnext=True;
-          continue;
+        if (p->data[j].x <= SCIPLOT_SKIP_VAL || p->data[j].y <= SCIPLOT_SKIP_VAL) {
+          skipnext = TRUE; continue;
         }
-        
-	PlotRT(w, p->data[j].x, p->data[j].y, &x2, &y2);
+        PlotRT(w, p->data[j].x, p->data[j].y, &x2, &y2);
         if (!skipnext) {
-          LineSet(w, x1, y1, x2, y2,
-            p->LineColor, p->LineStyle);
-          DrawMarker(w, x1, y1, p->markersize,
-            p->PointColor, p->PointStyle);
-          DrawMarker(w, x2, y2, p->markersize,
-            p->PointColor, p->PointStyle);
+          LineSet(w, x1, y1, x2, y2, p->LineColor, p->LineStyle);
+          DrawMarker(w, x1, y1, p->markersize, p->PointColor, p->PointStyle);
+          DrawMarker(w, x2, y2, p->markersize, p->PointColor, p->PointStyle);
         }
-	x1 = x2;
-	y1 = y2;
-        
-        skipnext=False;
+        x1 = x2;  y1 = y2;
+        skipnext = FALSE;
       }
     }
   }
 }
 
-static void 
-DrawAll (SciPlotWidget w)
+static void
+DrawAll(SciPlotWidget *w)
 {
-  if (w->plot.ChartType == XtCARTESIAN) {
+  if (w->ChartType == XtCARTESIAN) {
     DrawCartesianAxes(w);
     DrawLegend(w);
     DrawCartesianPlot(w);
-  }
-  else {
+  } else {
     DrawPolarAxes(w);
     DrawLegend(w);
     DrawPolarPlot(w);
   }
 }
 
-static Boolean 
-DrawQuick (SciPlotWidget w)
+static gboolean
+DrawQuick(SciPlotWidget *w)
 {
-  Boolean range_check;
-
-  range_check = CheckMinMax(w);
-  EraseClassItems(w, SciPlotDrawingLine);
+  gboolean range_check = CheckMinMax(w);
   EraseAllItems(w);
   DrawAll(w);
-  
   return range_check;
 }
 
-
-/*
- * Public Plot functions
+/* ==========================================================================
+ * Private list management functions
  */
 
-int 
-SciPlotAllocNamedColor (Widget wi, char *name)
+static int
+_ListNew(SciPlotWidget *w)
 {
-  XColor used, exact;
-  SciPlotWidget w;
+  int index;
+  SciPlotList *p;
+  gboolean found = FALSE;
 
-  if (!XtIsSciPlot(wi))
-    return -1;
-
-  w = (SciPlotWidget) wi;
-
-  if (!XAllocNamedColor(XtDisplay(w), w->plot.cmap, name, &used, &exact))
-    return 1;
-  return ColorStore(w, used.pixel);
+  for (index = 0; index < w->num_plotlist; index++) {
+    p = w->plotlist + index;
+    if (!p->used) { found = TRUE; break; }
+  }
+  if (!found) {
+    w->num_plotlist++;
+    if (w->alloc_plotlist == 0) {
+      w->alloc_plotlist = NUMPLOTLINEALLOC;
+      w->plotlist = g_new0(SciPlotList, w->alloc_plotlist);
+    } else if (w->num_plotlist > w->alloc_plotlist) {
+      w->alloc_plotlist += NUMPLOTLINEALLOC;
+      w->plotlist = g_realloc(w->plotlist, w->alloc_plotlist * sizeof(SciPlotList));
+    }
+    index = w->num_plotlist - 1;
+    p = w->plotlist + index;
+  }
+  p->LineStyle = p->LineColor = p->PointStyle = p->PointColor = 0;
+  p->number = p->allocated = 0;
+  p->data = NULL;  p->legend = NULL;
+  p->draw = p->used = TRUE;
+  p->markersize = (real)w->DefaultMarkerSize;
+  return index;
 }
 
-int 
-SciPlotAllocRGBColor (Widget wi, int r, int g, int b)
+static void
+_ListDelete(SciPlotList *p)
 {
-  XColor used;
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return -1;
-
-  w = (SciPlotWidget) wi;
-
-  used.pixel = 0;
-  r *= 256;
-  g *= 256;
-  b *= 256;
-  if (r > 65535)
-    r = 65535;
-  if (g > 65535)
-    g = 65535;
-  if (b > 65535)
-    b = 65535;
-  used.red = (unsigned short) r;
-  used.green = (unsigned short) g;
-  used.blue = (unsigned short) b;
-  if (!XAllocColor(XtDisplay(w), w->plot.cmap, &used))
-    return 1;
-  return ColorStore(w, used.pixel);
+  p->draw = p->used = FALSE;
+  p->number = p->allocated = 0;
+  g_free(p->data);   p->data   = NULL;
+  g_free(p->legend); p->legend = NULL;
 }
 
-void 
-SciPlotSetBackgroundColor (Widget wi, int color)
+static SciPlotList *
+_ListFind(SciPlotWidget *w, int id)
 {
-  SciPlotWidget w;
+  if (id >= 0 && id < w->num_plotlist) {
+    SciPlotList *p = w->plotlist + id;
+    if (p->used) return p;
+  }
+  return NULL;
+}
 
-  if (!XtIsSciPlot(wi))
-    return;
+static void
+_ListSetStyle(SciPlotList *p, int pcolor, int pstyle, int lcolor, int lstyle)
+{
+  if (lstyle >= 0) p->LineStyle  = lstyle;
+  if (lcolor >= 0) p->LineColor  = lcolor;
+  if (pstyle >= 0) p->PointStyle = pstyle;
+  if (pcolor >= 0) p->PointColor = pcolor;
+}
 
-  w = (SciPlotWidget) wi;
-  if (color < w->plot.num_colors) {
-    w->plot.BackgroundColor = color;
-    w->core.background_pixel = w->plot.colors[color];
-    XSetWindowBackground( XtDisplay(w), XtWindow(w), w->core.background_pixel);
+static void
+_ListSetLegend(SciPlotList *p, const char *legend)
+{
+  g_free(p->legend);
+  p->legend = g_strdup(legend ? legend : "");
+}
+
+static void
+_ListAllocData(SciPlotList *p, int num)
+{
+  g_free(p->data);
+  p->allocated = num + NUMPLOTDATAEXTRA;
+  p->data = g_new0(realpair, p->allocated);
+  if (!p->data) p->number = p->allocated = 0;
+}
+
+static void
+_ListReallocData(SciPlotList *p, int more)
+{
+  if (!p->data) {
+    _ListAllocData(p, more);
+  } else if (p->number + more > p->allocated) {
+    p->allocated += more + NUMPLOTDATAEXTRA;
+    p->data = g_realloc(p->data, p->allocated * sizeof(realpair));
+    if (!p->data) p->number = p->allocated = 0;
   }
 }
 
-void 
-SciPlotSetForegroundColor (Widget wi, int color)
+static void
+_ListAddFloat(SciPlotList *p, int num, float *xlist, float *ylist)
 {
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-  if (color < w->plot.num_colors)
-    w->plot.ForegroundColor = color;
+  _ListReallocData(p, num);
+  if (p->data) {
+    for (int i = 0; i < num; i++) {
+      p->data[i + p->number].x = xlist[i];
+      p->data[i + p->number].y = ylist[i];
+    }
+    p->number += num;
+  }
 }
 
-void 
-SciPlotListDelete (Widget wi, int idnum)
+static void
+_ListAddDouble(SciPlotList *p, int num, double *xlist, double *ylist)
 {
-  SciPlotList *p;
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-
-  p = _ListFind(w, idnum);
-  if (p)
-    _ListDelete(p);
+  _ListReallocData(p, num);
+  if (p->data) {
+    for (int i = 0; i < num; i++) {
+      p->data[i + p->number].x = (real)xlist[i];
+      p->data[i + p->number].y = (real)ylist[i];
+    }
+    p->number += num;
+  }
 }
 
-int 
-SciPlotListCreateFromData (Widget wi, int num, real *xlist, real *ylist, char *legend, int pcolor, int pstyle, int lcolor, int lstyle)
+static void
+_ListAddReal(SciPlotList *p, int num, real *xlist, real *ylist)
 {
-  int idnum;
-  SciPlotList *p;
-  SciPlotWidget w;
+  _ListReallocData(p, num);
+  if (p->data) {
+    for (int i = 0; i < num; i++) {
+      p->data[i + p->number].x = xlist[i];
+      p->data[i + p->number].y = ylist[i];
+    }
+    p->number += num;
+  }
+}
 
-  if (!XtIsSciPlot(wi))
-    return -1;
+static void _ListSetFloat(SciPlotList *p, int num, float *xlist, float *ylist)
+  { if (!p->data || p->allocated < num) _ListAllocData(p, num); p->number = 0; _ListAddFloat(p, num, xlist, ylist); }
+static void _ListSetDouble(SciPlotList *p, int num, double *xlist, double *ylist)
+  { if (!p->data || p->allocated < num) _ListAllocData(p, num); p->number = 0; _ListAddDouble(p, num, xlist, ylist); }
+static void _ListSetReal(SciPlotList *p, int num, real *xlist, real *ylist)
+  { if (!p->data || p->allocated < num) _ListAllocData(p, num); p->number = 0; _ListAddReal(p, num, xlist, ylist); }
 
-  w = (SciPlotWidget) wi;
+/* ==========================================================================
+ * Property setters / getters
+ */
 
-  idnum = _ListNew(w);
-  p = w->plot.plotlist + idnum;
+#define CHECK(wi)  do { if (!SCIPLOT_IS_WIDGET(wi)) return;   } while(0)
+#define CHECKB(wi) do { if (!SCIPLOT_IS_WIDGET(wi)) return FALSE; } while(0)
+#define CHECKW(wi) SCIPLOT_WIDGET(wi)
+
+void sciplot_widget_set_chart_type(GtkWidget *wi, int v)          { CHECK(wi); CHECKW(wi)->ChartType = v; }
+void sciplot_widget_set_degrees(GtkWidget *wi, gboolean v)        { CHECK(wi); CHECKW(wi)->Degrees = v; }
+void sciplot_widget_set_xlog(GtkWidget *wi, gboolean v)           { CHECK(wi); CHECKW(wi)->XLog = v; }
+void sciplot_widget_set_ylog(GtkWidget *wi, gboolean v)           { CHECK(wi); CHECKW(wi)->YLog = v; }
+void sciplot_widget_set_xautoscale(GtkWidget *wi, gboolean v)     { CHECK(wi); CHECKW(wi)->XAutoScale = v; }
+void sciplot_widget_set_yautoscale(GtkWidget *wi, gboolean v)     { CHECK(wi); CHECKW(wi)->YAutoScale = v; }
+void sciplot_widget_set_xaxis_numbers(GtkWidget *wi, gboolean v)  { CHECK(wi); CHECKW(wi)->XAxisNumbers = v; }
+void sciplot_widget_set_yaxis_numbers(GtkWidget *wi, gboolean v)  { CHECK(wi); CHECKW(wi)->YAxisNumbers = v; }
+void sciplot_widget_set_xorigin(GtkWidget *wi, gboolean v)        { CHECK(wi); CHECKW(wi)->XOrigin = v; }
+void sciplot_widget_set_yorigin(GtkWidget *wi, gboolean v)        { CHECK(wi); CHECKW(wi)->YOrigin = v; }
+void sciplot_widget_set_draw_major(GtkWidget *wi, gboolean v)     { CHECK(wi); CHECKW(wi)->DrawMajor = v; }
+void sciplot_widget_set_draw_minor(GtkWidget *wi, gboolean v)     { CHECK(wi); CHECKW(wi)->DrawMinor = v; }
+void sciplot_widget_set_draw_major_tics(GtkWidget *wi, gboolean v){ CHECK(wi); CHECKW(wi)->DrawMajorTics = v; }
+void sciplot_widget_set_draw_minor_tics(GtkWidget *wi, gboolean v){ CHECK(wi); CHECKW(wi)->DrawMinorTics = v; }
+void sciplot_widget_set_show_legend(GtkWidget *wi, gboolean v)    { CHECK(wi); CHECKW(wi)->ShowLegend = v; }
+void sciplot_widget_set_show_title(GtkWidget *wi, gboolean v)     { CHECK(wi); CHECKW(wi)->ShowTitle = v; }
+void sciplot_widget_set_show_xlabel(GtkWidget *wi, gboolean v)    { CHECK(wi); CHECKW(wi)->ShowXLabel = v; }
+void sciplot_widget_set_show_ylabel(GtkWidget *wi, gboolean v)    { CHECK(wi); CHECKW(wi)->ShowYLabel = v; }
+void sciplot_widget_set_monochrome(GtkWidget *wi, gboolean v)     { CHECK(wi); CHECKW(wi)->Monochrome = v; }
+void sciplot_widget_set_legend_through_plot(GtkWidget *wi, gboolean v) { CHECK(wi); CHECKW(wi)->LegendThroughPlot = v; }
+void sciplot_widget_set_y_numbers_horizontal(GtkWidget *wi, gboolean v){ CHECK(wi); CHECKW(wi)->YNumHorz = v; }
+void sciplot_widget_set_margin(GtkWidget *wi, int v)              { CHECK(wi); CHECKW(wi)->Margin = v; }
+void sciplot_widget_set_title_margin(GtkWidget *wi, int v)        { CHECK(wi); CHECKW(wi)->TitleMargin = v; }
+
+void sciplot_widget_set_plot_title(GtkWidget *wi, const char *t)
+{ CHECK(wi); SciPlotWidget *w = CHECKW(wi); g_free(w->plotTitle); w->plotTitle = g_strdup(t ? t : ""); }
+void sciplot_widget_set_xlabel(GtkWidget *wi, const char *t)
+{ CHECK(wi); SciPlotWidget *w = CHECKW(wi); g_free(w->xlabel); w->xlabel = g_strdup(t ? t : ""); }
+void sciplot_widget_set_ylabel(GtkWidget *wi, const char *t)
+{ CHECK(wi); SciPlotWidget *w = CHECKW(wi); g_free(w->ylabel); w->ylabel = g_strdup(t ? t : ""); }
+void sciplot_widget_set_title_font(GtkWidget *wi, int f)
+{ CHECK(wi); SciPlotWidget *w = CHECKW(wi); w->TitleFont = f; FontnumReplace(w, w->titleFont, f); }
+void sciplot_widget_set_label_font(GtkWidget *wi, int f)
+{ CHECK(wi); SciPlotWidget *w = CHECKW(wi); w->LabelFont = f; FontnumReplace(w, w->labelFont, f); }
+void sciplot_widget_set_axis_font(GtkWidget *wi, int f)
+{ CHECK(wi); SciPlotWidget *w = CHECKW(wi); w->AxisFont = f; FontnumReplace(w, w->axisFont, f); }
+
+gboolean    sciplot_widget_get_xlog(GtkWidget *wi)         { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->XLog         : FALSE; }
+gboolean    sciplot_widget_get_ylog(GtkWidget *wi)         { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->YLog         : FALSE; }
+gboolean    sciplot_widget_get_xaxis_numbers(GtkWidget *wi){ return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->XAxisNumbers : FALSE; }
+gboolean    sciplot_widget_get_yaxis_numbers(GtkWidget *wi){ return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->YAxisNumbers : FALSE; }
+gboolean    sciplot_widget_get_xorigin(GtkWidget *wi)      { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->XOrigin      : FALSE; }
+gboolean    sciplot_widget_get_yorigin(GtkWidget *wi)      { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->YOrigin      : FALSE; }
+gboolean    sciplot_widget_get_draw_major(GtkWidget *wi)   { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->DrawMajor    : FALSE; }
+gboolean    sciplot_widget_get_draw_minor(GtkWidget *wi)   { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->DrawMinor    : FALSE; }
+gboolean    sciplot_widget_get_show_legend(GtkWidget *wi)  { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->ShowLegend   : FALSE; }
+gboolean    sciplot_widget_get_show_title(GtkWidget *wi)   { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->ShowTitle    : FALSE; }
+gboolean    sciplot_widget_get_show_xlabel(GtkWidget *wi)  { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->ShowXLabel   : FALSE; }
+gboolean    sciplot_widget_get_show_ylabel(GtkWidget *wi)  { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->ShowYLabel   : FALSE; }
+const char *sciplot_widget_get_plot_title(GtkWidget *wi)   { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->plotTitle    : NULL;  }
+const char *sciplot_widget_get_xlabel(GtkWidget *wi)       { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->xlabel       : NULL;  }
+const char *sciplot_widget_get_ylabel(GtkWidget *wi)       { return SCIPLOT_IS_WIDGET(wi) ? CHECKW(wi)->ylabel       : NULL;  }
+
+/* ==========================================================================
+ * Public SciPlot API
+ */
+
+int
+SciPlotAllocNamedColor(GtkWidget *wi, const char *name)
+{
+  GdkRGBA color;
+  if (!SCIPLOT_IS_WIDGET(wi)) return -1;
+  if (!gdk_rgba_parse(&color, name)) return 1;
+  return ColorStore(SCIPLOT_WIDGET(wi), &color);
+}
+
+int
+SciPlotAllocRGBColor(GtkWidget *wi, int r, int g, int b)
+{
+  GdkRGBA color;
+  if (!SCIPLOT_IS_WIDGET(wi)) return -1;
+  color.red   = CLAMP(r / 255.0, 0.0, 1.0);
+  color.green = CLAMP(g / 255.0, 0.0, 1.0);
+  color.blue  = CLAMP(b / 255.0, 0.0, 1.0);
+  color.alpha = 1.0;
+  return ColorStore(SCIPLOT_WIDGET(wi), &color);
+}
+
+void SciPlotSetBackgroundColor(GtkWidget *wi, int color)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; SciPlotWidget *w = CHECKW(wi); if (color < w->num_colors) w->BackgroundColor = color; }
+void SciPlotSetForegroundColor(GtkWidget *wi, int color)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; SciPlotWidget *w = CHECKW(wi); if (color < w->num_colors) w->ForegroundColor = color; }
+
+void SciPlotListDelete(GtkWidget *wi, int idnum)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; SciPlotList *p = _ListFind(SCIPLOT_WIDGET(wi), idnum); if (p) _ListDelete(p); }
+
+int
+SciPlotListCreateFromData(GtkWidget *wi, int num, real *xlist, real *ylist,
+                          const char *legend,
+                          int pcolor, int pstyle, int lcolor, int lstyle)
+{
+  if (!SCIPLOT_IS_WIDGET(wi)) return -1;
+  SciPlotWidget *w = CHECKW(wi);
+  int idnum = _ListNew(w);
+  SciPlotList *p = w->plotlist + idnum;
   _ListSetReal(p, num, xlist, ylist);
   _ListSetLegend(p, legend);
   _ListSetStyle(p, pcolor, pstyle, lcolor, lstyle);
   return idnum;
 }
 
-int 
-SciPlotListCreateFloat (Widget wi, int num, float *xlist, float *ylist, char *legend)
+int
+SciPlotListCreateFloat(GtkWidget *wi, int num, float *xlist, float *ylist, const char *legend)
 {
-  int idnum;
-  SciPlotList *p;
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return -1;
-
-  w = (SciPlotWidget) wi;
-
-  idnum = _ListNew(w);
-  p = w->plot.plotlist + idnum;
+  if (!SCIPLOT_IS_WIDGET(wi)) return -1;
+  SciPlotWidget *w = CHECKW(wi);
+  int idnum = _ListNew(w);
+  SciPlotList *p = w->plotlist + idnum;
   _ListSetFloat(p, num, xlist, ylist);
   _ListSetLegend(p, legend);
   _ListSetStyle(p, 1, XtMARKER_CIRCLE, 1, XtLINE_SOLID);
   return idnum;
 }
 
-void 
-SciPlotListUpdateFloat (Widget wi, int idnum, int num, float *xlist, float *ylist)
+void SciPlotListUpdateFloat(GtkWidget *wi, int idnum, int num, float *xlist, float *ylist)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; SciPlotList *p = _ListFind(CHECKW(wi), idnum); if (p) _ListSetFloat(p, num, xlist, ylist); }
+void SciPlotListAddFloat(GtkWidget *wi, int idnum, int num, float *xlist, float *ylist)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; SciPlotList *p = _ListFind(CHECKW(wi), idnum); if (p) _ListAddFloat(p, num, xlist, ylist); }
+
+int
+SciPlotListCreateDouble(GtkWidget *wi, int num, double *xlist, double *ylist, const char *legend)
 {
-  SciPlotList *p;
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-
-  p = _ListFind(w, idnum);
-  if (p)
-    _ListSetFloat(p, num, xlist, ylist);
-}
-
-void 
-SciPlotListAddFloat (Widget wi, int idnum, int num, float *xlist, float *ylist)
-{
-  SciPlotList *p;
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-
-  p = _ListFind(w, idnum);
-  if (p)
-    _ListAddFloat(p, num, xlist, ylist);
-}
-
-int 
-SciPlotListCreateDouble (Widget wi, int num, double *xlist, double *ylist, char *legend)
-{
-  int idnum;
-  SciPlotList *p;
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return -1;
-
-  w = (SciPlotWidget) wi;
-
-  idnum = _ListNew(w);
-  p = w->plot.plotlist + idnum;
+  if (!SCIPLOT_IS_WIDGET(wi)) return -1;
+  SciPlotWidget *w = CHECKW(wi);
+  int idnum = _ListNew(w);
+  SciPlotList *p = w->plotlist + idnum;
   _ListSetDouble(p, num, xlist, ylist);
   _ListSetLegend(p, legend);
   _ListSetStyle(p, 1, XtMARKER_CIRCLE, 1, XtLINE_SOLID);
   return idnum;
 }
 
-void 
-SciPlotListUpdateDouble (Widget wi, int idnum, int num, double *xlist, double *ylist)
+void SciPlotListUpdateDouble(GtkWidget *wi, int idnum, int num, double *xlist, double *ylist)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; SciPlotList *p = _ListFind(CHECKW(wi), idnum); if (p) _ListSetDouble(p, num, xlist, ylist); }
+void SciPlotListAddDouble(GtkWidget *wi, int idnum, int num, double *xlist, double *ylist)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; SciPlotList *p = _ListFind(CHECKW(wi), idnum); if (p) _ListAddDouble(p, num, xlist, ylist); }
+
+void SciPlotListSetStyle(GtkWidget *wi, int idnum, int pcolor, int pstyle, int lcolor, int lstyle)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; SciPlotList *p = _ListFind(CHECKW(wi), idnum); if (p) _ListSetStyle(p, pcolor, pstyle, lcolor, lstyle); }
+void SciPlotListSetMarkerSize(GtkWidget *wi, int idnum, float size)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; SciPlotList *p = _ListFind(CHECKW(wi), idnum); if (p) p->markersize = (real)size; }
+
+void SciPlotSetXAutoScale(GtkWidget *wi)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; CHECKW(wi)->XAutoScale = TRUE; }
+void SciPlotSetXUserScale(GtkWidget *wi, double min, double max)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; SciPlotWidget *w = CHECKW(wi); if (min < max) { w->XAutoScale = FALSE; w->UserMin.x = (real)min; w->UserMax.x = (real)max; } }
+void SciPlotSetYAutoScale(GtkWidget *wi)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; CHECKW(wi)->YAutoScale = TRUE; }
+void SciPlotSetYUserScale(GtkWidget *wi, double min, double max)
+{ if (!SCIPLOT_IS_WIDGET(wi)) return; SciPlotWidget *w = CHECKW(wi); if (min < max) { w->YAutoScale = FALSE; w->UserMin.y = (real)min; w->UserMax.y = (real)max; } }
+
+void
+SciPlotPrintStatistics(GtkWidget *wi)
 {
-  SciPlotList *p;
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-
-  p = _ListFind(w, idnum);
-  if (p)
-    _ListSetDouble(p, num, xlist, ylist);
-}
-
-void 
-SciPlotListAddDouble (Widget wi, int idnum, int num, double *xlist, double *ylist)
-{
-  SciPlotList *p;
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-
-  p = _ListFind(w, idnum);
-  if (p)
-    _ListAddDouble(p, num, xlist, ylist);
-}
-
-void 
-SciPlotListSetStyle (Widget wi, int idnum, int pcolor, int pstyle, int lcolor, int lstyle)
-{
-  SciPlotList *p;
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-
-  p = _ListFind(w, idnum);
-  if (p)
-    _ListSetStyle(p, pcolor, pstyle, lcolor, lstyle);
-}
-
-void 
-SciPlotListSetMarkerSize (Widget wi, int idnum, float size)
-{
-  SciPlotList *p;
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-
-  p = _ListFind(w, idnum);
-  if (p)
-    p->markersize=size;
-}
-
-void 
-SciPlotSetXAutoScale (Widget wi)
-{
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-  w->plot.XAutoScale = True;
-}
-
-void 
-SciPlotSetXUserScale (Widget wi, double min, double max)
-{
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-  if (min < max) {
-    w->plot.XAutoScale = False;
-    w->plot.UserMin.x = (real) min;
-    w->plot.UserMax.x = (real) max;
-  }
-}
-
-void 
-SciPlotSetYAutoScale (Widget wi)
-{
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-  w->plot.YAutoScale = True;
-}
-
-void 
-SciPlotSetYUserScale (Widget wi, double min, double max)
-{
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-  if (min < max) {
-    w->plot.YAutoScale = False;
-    w->plot.UserMin.y = (real) min;
-    w->plot.UserMax.y = (real) max;
-  }
-}
-
-void 
-SciPlotPrintStatistics (Widget wi)
-{
+  if (!SCIPLOT_IS_WIDGET(wi)) return;
+  SciPlotWidget *w = CHECKW(wi);
   int i, j;
   SciPlotList *p;
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-
-  printf("Title=%s\nxlabel=%s\tylabel=%s\n",
-    w->plot.plotTitle, w->plot.xlabel, w->plot.ylabel);
-  printf("ChartType=%d\n", w->plot.ChartType);
-  printf("Degrees=%d\n", w->plot.Degrees);
-  printf("XLog=%d\tYLog=%d\n", w->plot.XLog, w->plot.YLog);
-  printf("XAutoScale=%d\tYAutoScale=%d\n",
-    w->plot.XAutoScale, w->plot.YAutoScale);
-  for (i = 0; i < w->plot.num_plotlist; i++) {
-    p = w->plot.plotlist + i;
+  printf("Title=%s\nxlabel=%s\tylabel=%s\n", w->plotTitle, w->xlabel, w->ylabel);
+  printf("ChartType=%d\nDegrees=%d\nXLog=%d\tYLog=%d\nXAutoScale=%d\tYAutoScale=%d\n",
+         w->ChartType, w->Degrees, w->XLog, w->YLog, w->XAutoScale, w->YAutoScale);
+  for (i = 0; i < w->num_plotlist; i++) {
+    p = w->plotlist + i;
     if (p->draw) {
-      printf("\nLegend=%s\n", p->legend);
-      printf("Styles: point=%d line=%d  Color: point=%d line=%d\n",
-	p->PointStyle, p->LineStyle, p->PointColor, p->LineColor);
+      printf("\nLegend=%s\nStyles: point=%d line=%d  Color: point=%d line=%d\n",
+             p->legend, p->PointStyle, p->LineStyle, p->PointColor, p->LineColor);
       for (j = 0; j < p->number; j++)
-	printf("%f\t%f\n", p->data[j].x, p->data[j].y);
+        printf("%f\t%f\n", (double)p->data[j].x, (double)p->data[j].y);
       printf("\n");
     }
   }
 }
 
-void 
-SciPlotExportData (Widget wi, FILE *fd)
+void
+SciPlotExportData(GtkWidget *wi, FILE *fd)
 {
+  if (!SCIPLOT_IS_WIDGET(wi)) return;
+  SciPlotWidget *w = CHECKW(wi);
   int i, j;
   SciPlotList *p;
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
-
-  fprintf(fd, "Title=\"%s\"\n", w->plot.plotTitle);
-  fprintf(fd, "Xaxis=\"%s\"\n", w->plot.xlabel);
-  fprintf(fd, "Yaxis=\"%s\"\n\n", w->plot.ylabel);
-  for (i = 0; i < w->plot.num_plotlist; i++) {
-    p = w->plot.plotlist + i;
+  fprintf(fd, "Title=\"%s\"\nXaxis=\"%s\"\nYaxis=\"%s\"\n\n", w->plotTitle, w->xlabel, w->ylabel);
+  for (i = 0; i < w->num_plotlist; i++) {
+    p = w->plotlist + i;
     if (p->draw) {
-      fprintf(fd, "Line=\"%s\"\n",p->legend);
+      fprintf(fd, "Line=\"%s\"\n", p->legend);
       for (j = 0; j < p->number; j++)
-	fprintf(fd, "%e\t%e\n", p->data[j].x, p->data[j].y);
+        fprintf(fd, "%e\t%e\n", (double)p->data[j].x, (double)p->data[j].y);
       fprintf(fd, "\n");
     }
   }
 }
 
-int 
-SciPlotStoreAllocatedColor(Widget wi, Pixel p)
+void
+SciPlotUpdate(GtkWidget *wi)
 {
-  SciPlotWidget w;
-  
-  if (!XtIsSciPlot(wi))
-    return -1;
-  
-  w = (SciPlotWidget) wi;
-  
-  return ColorStore(w, p);
-}
-
-void 
-SciPlotUpdate (Widget wi)
-{
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return;
-
-  w = (SciPlotWidget) wi;
+  if (!SCIPLOT_IS_WIDGET(wi)) return;
+  if (!gtk_widget_get_realized(wi)) return;
+  SciPlotWidget *w = CHECKW(wi);
   EraseAll(w);
-#ifdef DEBUG_SCIPLOT
-  SciPlotPrintStatistics(w);
-#endif
   ComputeAll(w);
   DrawAll(w);
+  gtk_widget_queue_draw(wi);
 }
 
-Boolean 
-SciPlotQuickUpdate (Widget wi)
+gboolean
+SciPlotQuickUpdate(GtkWidget *wi)
 {
-  SciPlotWidget w;
-
-  if (!XtIsSciPlot(wi))
-    return False;
-  
-  w = (SciPlotWidget) wi;
-  return DrawQuick(w);
+  if (!SCIPLOT_IS_WIDGET(wi)) return FALSE;
+  if (!gtk_widget_get_realized(wi)) return FALSE;
+  SciPlotWidget *w = CHECKW(wi);
+  gboolean range_check = DrawQuick(w);
+  gtk_widget_queue_draw(wi);
+  return range_check;
 }
