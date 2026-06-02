@@ -247,8 +247,11 @@ SciPlotDialogInternal(GtkWidget *parent_win, const char *title)
   gtk_window_set_default_size(GTK_WINDOW(win), 550, 700);
   gtk_window_set_hide_on_close(GTK_WINDOW(win), FALSE);
   g_free(wt);
-  if (parent_win && GTK_IS_WINDOW(parent_win))
+  if (parent_win && GTK_IS_WINDOW(parent_win)) {
     gtk_window_set_transient_for(GTK_WINDOW(win), GTK_WINDOW(parent_win));
+    GtkApplication *app = gtk_window_get_application(GTK_WINDOW(parent_win));
+    if (app) gtk_window_set_application(GTK_WINDOW(win), app);
+  }
   pd->window = win;
 
   GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
@@ -341,7 +344,7 @@ SciPlotDialogInternalPopup(PlotDialogData *pd)
   if (t) gtk_editable_set_text(GTK_EDITABLE(pd->title_entry),  t);
   if (x) gtk_editable_set_text(GTK_EDITABLE(pd->xlabel_entry), x);
   if (y) gtk_editable_set_text(GTK_EDITABLE(pd->ylabel_entry), y);
-  gtk_widget_set_visible(pd->window, TRUE);
+  gtk_window_present(GTK_WINDOW(pd->window));
 }
 
 GtkWidget *
@@ -355,7 +358,7 @@ void
 SciPlotDialogPopup(GtkWidget *plot)
 {
   GtkWidget *win = gtk_widget_get_ancestor(plot, GTK_TYPE_WINDOW);
-  if (win) gtk_widget_set_visible(win, TRUE);
+  if (win) gtk_window_present(GTK_WINDOW(win));
 }
 
 void

@@ -46,6 +46,7 @@ on_activate(GtkApplication *application, gpointer user_data)
   }
   line_id = SciPlotListCreateFromFloat(plot, 10, xdata, ydata, "race");
   SciPlotUpdate(plot);
+  SciPlotDialogPopup(plot);
 
   srand((unsigned int)getpid());
   g_timeout_add(500, update_cb, plot);
