@@ -18,8 +18,6 @@ xyplot_LDADD     = libsciplot.la $(GTK4_LIBS)
 include_HEADERS = SciPlot.h SciPlotP.h SciPlotUtil.h
 
 dist_doc_DATA  = data.txt
-dist_doc_DATA += ANNOUNCE CHANGES LICENSE
+dist_doc_DATA += ANNOUNCE CHANGES LICENSE README.md
 dist_doc_DATA += SciPlot.html SciPlotDemo.html SciPlotProg.html gpl.html
 dist_doc_DATA += SciPlotDemo.gif SciPlotExample.gif SciPlotTitle.gif new.gif
-
-EXTRA_DIST = Imakefile Makefile.noImake
