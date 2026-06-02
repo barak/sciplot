@@ -4,7 +4,7 @@ lib_LTLIBRARIES = libsciplot.la
 libsciplot_la_SOURCES = SciPlot.c SciPlotUtil.c
 libsciplot_la_CFLAGS = $(GTK4_CFLAGS)
 libsciplot_la_LIBADD = $(GTK4_LIBS)
-libsciplot_la_LDFLAGS = -version-info 37:1:36
+libsciplot_la_LDFLAGS = -version-info 2:0:0
 
 bin_PROGRAMS = realtime xyplot
 
