@@ -8,6 +8,10 @@
  * version 2 of the License, or (at your option) any later version.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <gtk/gtk.h>
@@ -17,6 +21,23 @@
 static int   line_id;
 static float xdata[10];
 static float ydata[10];
+
+static const GOptionEntry options[] = {
+  {"version", 'V', 0, G_OPTION_ARG_NONE, NULL,
+   "Show version information and exit", NULL},
+  {NULL}
+};
+
+static gint
+on_handle_local_options(GApplication *app, GVariantDict *opts, gpointer data)
+{
+  (void)app; (void)data;
+  if (g_variant_dict_contains(opts, "version")) {
+    g_print(PACKAGE_STRING "\n");
+    return 0;
+  }
+  return -1;
+}
 
 static gboolean
 update_cb(gpointer user_data)
@@ -31,11 +52,11 @@ update_cb(gpointer user_data)
 }
 
 static void
-on_activate(GtkApplication *application, gpointer user_data)
+on_activate(GtkApplication *app, gpointer data)
 {
-  (void)user_data;
+  (void)data;
 
-  GtkWidget *root = gtk_application_window_new(application);
+  GtkWidget *root = gtk_application_window_new(app);
   gtk_widget_set_visible(root, FALSE);
 
   GtkWidget *plot = SciPlotDialog(root, "Real Time Test");
@@ -57,6 +78,11 @@ main(int argc, char *argv[])
 {
   GtkApplication *app = gtk_application_new("org.sciplot.realtime",
                                             G_APPLICATION_DEFAULT_FLAGS);
+  g_application_set_option_context_summary(G_APPLICATION(app),
+    "Demonstrate real-time SciPlot updates with a randomly-incrementing dataset.");
+  g_application_add_main_option_entries(G_APPLICATION(app), options);
+  g_signal_connect(app, "handle-local-options",
+                   G_CALLBACK(on_handle_local_options), NULL);
   g_signal_connect(app, "activate", G_CALLBACK(on_activate), NULL);
   int status = g_application_run(G_APPLICATION(app), argc, argv);
   g_object_unref(app);

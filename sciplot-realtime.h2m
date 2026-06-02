@@ -1,0 +1,15 @@
+[DESCRIPTION]
+\fBsciplot-realtime\fR opens a SciPlot window containing a ten-point dataset
+and updates it at 500 ms intervals, randomly incrementing one point each
+tick.  It demonstrates the \fBSciPlotQuickUpdate\fR / \fBSciPlotUpdate\fR
+real-time update API.
+
+The plot window provides controls for toggling log axes, gridlines,
+the legend, and PostScript export.
+
+[SEE ALSO]
+.BR sciplot-xyplot (1)
+
+[AUTHOR]
+Written by Rob McMullen.
+GTK4/Cairo port and Debian packaging by Barak A. Pearlmutter <bap@debian.org>.

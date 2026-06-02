@@ -25,16 +25,17 @@ autotools sequence:
 
 <p><code>autoreconf -fi &amp;&amp; ./configure &amp;&amp; make</code>
 
-<p>The two programs produced are <tt>xyplot</tt> and <tt>realtime</tt>.
+<p>The two programs produced are <tt>sciplot-xyplot</tt> and
+<tt>sciplot-realtime</tt>.
 
-<p><hr><h2><a name="sciplot">xyplot — x/y plotter</a></h2>
+<p><hr><h2><a name="sciplot">sciplot-xyplot — x/y plotter</a></h2>
 
-<p>The <tt>xyplot</tt> program takes a text file (or standard input) as input
-and plots the data as x/y or polar plots.  More than one set of data may
-appear in a single plot frame, and more than one plot frame may be displayed
-at once.  As shown in the <a href="#screen">screen shot</a>, many widget
-features are available as interactive controls before generating a PostScript
-copy.
+<p>The <tt>sciplot-xyplot</tt> program takes a text file (or standard input)
+as input and plots the data as x/y or polar plots.  More than one set of data
+may appear in a single plot frame, and more than one plot frame may be
+displayed at once.  As shown in the <a href="#screen">screen shot</a>, many
+widget features are available as interactive controls before generating a
+PostScript copy.
 
 <h3><a name="screen">Screen Shot</a></h3>
 
@@ -42,10 +43,12 @@ copy.
 
 <h3><a name="usage">Usage</a></h3>
 
-<p><code>xyplot data.txt</code>
+<p><code>sciplot-xyplot [OPTION...] [FILE...]</code>
 
-<p><tt>xyplot</tt> accepts one or more input files on the command line, or
-reads from standard input if none are given.
+<p><tt>sciplot-xyplot</tt> accepts one or more input files on the command
+line, or reads from standard input if none are given.  Use
+<tt>--help</tt> for a full option list and <tt>--version</tt> for version
+information.
 
 <h3><a name="data">Input File Format</a></h3>
 <p>There are five commands recognised in the input file.  Optional items are
@@ -106,7 +109,7 @@ Line="100% strain"
 8.387889e+00    4.000000e+00
 </pre>
 
-<p><hr><h2><a name="realtime">realtime — Realtime Demo</a></h2>
+<p><hr><h2><a name="realtime">sciplot-realtime — Realtime Demo</a></h2>
 <p>A simple program demonstrating the real-time update API.  A
 <tt>g_timeout_add</tt> callback fires every 500 ms and randomly increments
 one of the data points.  The plot redraws after every update using
@@ -115,7 +118,10 @@ axis range needs to change.
 
 <p>Run it with no arguments:
 
-<p><code>realtime</code>
+<p><code>sciplot-realtime</code>
+
+<p>Use <tt>--help</tt> for options and <tt>--version</tt> for version
+information.
 
 <hr>
 

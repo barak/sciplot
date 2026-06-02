@@ -1,0 +1,58 @@
+[DESCRIPTION]
+\fBsciplot-xyplot\fR reads one or more plot description files and opens an
+interactive GTK4 plot window for each.  If no files are given, the plot
+description is read from standard input.
+
+Each file may define multiple plot frames using the \fBTitle\fR command.
+Plots may be Cartesian (x/y) or polar.  The interactive window provides
+controls for toggling log axes, axis labels, the legend, and PostScript
+export.
+
+The input file format is described in \fISciPlotDemo.html\fR, installed in
+the documentation directory.
+
+[INPUT FORMAT]
+Commands recognised in each input file:
+
+.TP
+\fBTitle\fR [\fItitle\fR]
+Start a new plot frame.  If \fItitle\fR is omitted the frame is untitled.
+
+.TP
+\fBXaxis\fR [\fIlabel\fR]
+Set the X-axis label.
+
+.TP
+\fBYaxis\fR [\fIlabel\fR]
+Set the Y-axis label.
+
+.TP
+\fBPolar\fR [\fBrad\fR]
+Switch the current frame to polar mode.  Angles are in degrees by default;
+use \fBrad\fR for radians.
+
+.TP
+\fBLine\fR \fIlegend-label\fR
+Begin a new data series.  Pairs of numbers follow, one per line, until
+the next command or end of file.  The keyword \fBskip\fR on a line
+introduces a break in the line.
+
+[EXAMPLES]
+.TP
+Plot data from a file:
+.B sciplot-xyplot data.txt
+
+.TP
+Plot data from multiple files:
+.B sciplot-xyplot experiment1.txt experiment2.txt
+
+.TP
+Plot data from standard input:
+.B echo 'Title="Test"\nLine="y=x"\n1 1\n2 2\n3 3' | sciplot-xyplot
+
+[SEE ALSO]
+.BR sciplot-realtime (1)
+
+[AUTHOR]
+Written by Rob McMullen.
+GTK4/Cairo port and Debian packaging by Barak A. Pearlmutter <bap@debian.org>.

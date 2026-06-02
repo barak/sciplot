@@ -17,6 +17,10 @@ PKG_CHECK_MODULES([GTK4], [gtk4 >= 4.0 cairo cairo-ps pangocairo])
 
 AC_SEARCH_LIBS([hypot], [m])
 
+# help2man for man page generation
+AC_PATH_PROG([HELP2MAN], [help2man])
+AM_CONDITIONAL([HAVE_HELP2MAN], [test -n "$HELP2MAN"])
+
 # Epilogue
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

@@ -58,21 +58,24 @@ The build system uses autoconf/automake and finds GTK4, Cairo, and Pango via
 
 Two demo programs are included:
 
-**`xyplot`** — reads x/y data from a text file (or stdin) and displays an
-interactive plot window with controls for log axes, labels, legend, and
-PostScript export.
+**`sciplot-xyplot`** — reads x/y data from a text file (or stdin) and
+displays an interactive plot window with controls for log axes, labels,
+legend, and PostScript export.
 
 ```sh
-xyplot data.txt
+sciplot-xyplot data.txt
+sciplot-xyplot --help
 ```
 
-**`realtime`** — demonstrates the quick-update API with a live-updating plot.
+**`sciplot-realtime`** — demonstrates the quick-update API with a
+live-updating plot.
 
 ```sh
-realtime
+sciplot-realtime
+sciplot-realtime --help
 ```
 
-The text file format accepted by `xyplot` is documented in
+The text file format accepted by `sciplot-xyplot` is documented in
 [`SciPlotDemo.html`](SciPlotDemo.html).
 
 

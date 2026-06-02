@@ -20,8 +20,10 @@
 /ltmain.sh
 /m4/
 /missing
-/realtime
+/sciplot-realtime
+/sciplot-realtime.1
+/sciplot-xyplot
+/sciplot-xyplot.1
 /stamp-h1
-/xyplot
 Makefile
 Makefile.in
