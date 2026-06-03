@@ -1,2 +1,3 @@
 /usr/bin/*
 /usr/share/doc/*/data.txt /usr/share/doc/sciplot-bin/
+/usr/share/man

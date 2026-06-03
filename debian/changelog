@@ -1,3 +1,12 @@
+sciplot (1.37-2) unstable; urgency=medium
+
+  * General debian/* cleanups and loose ends
+  * Add upstream/metadata
+  * Bump library name to correspond to bumped soname (oops)
+  * add lib conflict to avoid bungled soname transition issue
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Wed, 03 Jun 2026 12:57:12 +0100
+
 sciplot (1.37-1) unstable; urgency=medium
 
   * New upstream release
@@ -141,7 +150,7 @@ sciplot (1.36-6) unstable; urgency=low
 
 sciplot (1.36-5) unstable; urgency=low
 
-  * Added Conflicts: sciplot to binary packages sciplot1 and sciplot-dev.
+  * Added Conflicts: sciplot to binary packages sciplot2 and sciplot-dev.
 
  -- Peter Palfrader <weasel@debian.org>  Thu, 28 Dec 2000 01:15:52 +0100
 
